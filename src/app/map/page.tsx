@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import "leaflet/dist/leaflet.css";
 import L, { Icon } from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "leaflet-draw";
+import "leaflet-draw/dist/leaflet.draw-src.css";
 
 const ManualMap = () => {
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -113,6 +115,26 @@ const ManualMap = () => {
           });
         },
       }).addTo(map);
+
+      var editableLayers = new L.FeatureGroup();
+      map.addLayer(editableLayers);
+
+      var drawControl = new L.Control.Draw();
+      map.addControl(drawControl);
+
+      map.on("draw:created", function (e) {
+        // var type = e.layerType,
+        //   layer = e.layer;
+
+        var type = (e as L.DrawEvents.Created).layerType,
+          layer = (e as L.DrawEvents.Created).layer;
+
+        if (type === "marker") {
+          layer.bindPopup("A popup!");
+        }
+
+        editableLayers.addLayer(layer);
+      });
     }
   }, []);
 
