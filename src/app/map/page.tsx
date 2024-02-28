@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
-import L, { Icon } from "leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
@@ -60,7 +60,7 @@ const ManualMap = () => {
         ],
       };
 
-      var labelIcon = (roomName: string) =>
+      var labelIcon = (roomName: string | null) =>
         new L.DivIcon({
           className: "my-div-icon",
           html: `<div style="display:flex; gap:4px; align-items:start"><img alt="marker" src="/images/marker.svg" /><span>${roomName}</span></div>`,
@@ -101,7 +101,7 @@ const ManualMap = () => {
         ],
       };
 
-      var accessPointIcon = L.icon({
+      var myLocationIcon = L.icon({
         iconUrl: "/images/my-loc.svg",
         iconSize: [24, 24],
         iconAnchor: [12, 12],
@@ -111,7 +111,7 @@ const ManualMap = () => {
       L.geoJSON(myLocationGeoJSON, {
         pointToLayer: function (feature, position) {
           return L.marker(position, {
-            icon: accessPointIcon,
+            icon: myLocationIcon,
           });
         },
       }).addTo(map);
@@ -119,21 +119,50 @@ const ManualMap = () => {
       var editableLayers = new L.FeatureGroup();
       map.addLayer(editableLayers);
 
-      var drawControl = new L.Control.Draw();
+      var drawControl = new L.Control.Draw({
+        draw: {
+          polyline: false,
+          polygon: {
+            allowIntersection: false,
+            drawError: {
+              color: "#e1e100",
+              message: "<strong>Oh snap!<strong> you can't draw that!",
+            },
+          },
+          circle: false,
+          circlemarker: false,
+          rectangle: {},
+          marker: false,
+        },
+        edit: {
+          featureGroup: editableLayers,
+          remove: true,
+          edit: false,
+        },
+      });
       map.addControl(drawControl);
 
       map.on("draw:created", function (e) {
-        // var type = e.layerType,
-        //   layer = e.layer;
-
         var type = (e as L.DrawEvents.Created).layerType,
           layer = (e as L.DrawEvents.Created).layer;
 
-        if (type === "marker") {
-          layer.bindPopup("A popup!");
-        }
+        var roomName = prompt("Enter room name:");
 
-        editableLayers.addLayer(layer);
+        if (roomName) {
+          layer.bindTooltip(roomName, {
+            permanent: true,
+            direction: "center",
+          });
+
+          // layer.on("click", function () {
+          //   roomName = prompt("Enter new room name:");
+          //   layer.setTooltipContent(roomName ? roomName : "");
+          // });
+
+          editableLayers.addLayer(layer);
+
+          var centroid = (layer as L.Polygon).getCenter();
+        }
       });
     }
   }, []);
