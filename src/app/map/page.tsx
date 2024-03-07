@@ -57,6 +57,22 @@ const ManualMap = () => {
               coordinates: [850, 577 - 440],
             },
           },
+          {
+            type: "Feature",
+            properties: { name: "Void" },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [1002, 0.166667],
+                  [1002, 276.166667],
+                  [1203, 276.166667],
+                  [1203, 0.166667],
+                  [1002, 0.166667],
+                ],
+              ],
+            },
+          },
         ],
       };
 
