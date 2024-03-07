@@ -8,6 +8,7 @@ import "leaflet-draw/dist/leaflet.draw-src.css";
 import CustomLayout from "@/components/layout/CustomLayout";
 import { CopyOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Button, Form, Input, Modal, notification } from "antd";
+import { copyToClipboard } from "@/utils/helper";
 
 const DrawFloorPlan = () => {
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -17,7 +18,7 @@ const DrawFloorPlan = () => {
   // const [roomName, setRoomName] = useState("");
 
   useEffect(() => {
-    const imgUrl = "/images/maps.png";
+    const imgUrl = "/images/maps2.png";
     const imgSize = [577, 1204];
 
     // @ts-ignore
@@ -83,7 +84,7 @@ const DrawFloorPlan = () => {
             type: "Feature",
             properties: {
               name: roomName,
-              centroid: [centroid.lng, centroid.lat],
+              centroid: [centroid.lat, centroid.lng],
             },
             geometry: layer.toGeoJSON().geometry,
           };
@@ -109,26 +110,6 @@ const DrawFloorPlan = () => {
       });
     }
   }, []);
-
-  // temp
-  function copyToClipboard(text: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      navigator.clipboard
-        .writeText(text)
-        .then(() => {
-          notification.open({
-            message: "Text copied to clipboard",
-          });
-          resolve();
-        })
-        .catch((err) => {
-          notification.open({
-            message: "Failed to copy text to clipboard:" + err,
-          });
-          reject(err);
-        });
-    });
-  }
 
   return (
     <CustomLayout>
