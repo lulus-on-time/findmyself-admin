@@ -41,7 +41,7 @@ const AddAccessPoint = () => {
       var bounds = [[0, 0], imgSize];
 
       // @ts-ignore
-      L.imageOverlay(imgUrl, bounds).addTo(map);
+      // L.imageOverlay(imgUrl, bounds).addTo(map);
       // @ts-ignore
       map.fitBounds(bounds);
 
@@ -163,10 +163,11 @@ const AddAccessPoint = () => {
       <div className="w-full flex">
         <div className="w-3/4">
           <Alert
-            message="Click anywhere within the defined room (blue area) to add an access point"
+            message="Click anywhere within the room (blue area) to add an access point"
             type="warning"
             closable
             showIcon
+            className="rounded-none"
           />
           <div
             id="map"
@@ -192,7 +193,7 @@ const AddAccessPoint = () => {
             </Button>
           </div>
           <Form>
-            <div className="mb-2">GeoJSON Example: (for dev only)</div>
+            <div className="mb-2">GeoJSON Example:</div>
             <Form.Item className="bg-[#F5F5F5] rounded-lg">
               <div className="absolute w-full flex justify-end">
                 <Button

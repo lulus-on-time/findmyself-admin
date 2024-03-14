@@ -6,37 +6,43 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
 import CustomLayout from "@/components/layout/CustomLayout";
-import { CopyOutlined, QuestionCircleOutlined } from "@ant-design/icons";
-import { Button, Form, Input, Modal, notification } from "antd";
+import {
+  CopyOutlined,
+  QuestionCircleOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
+import { Button, Form, Input, Modal, Upload, notification } from "antd";
 import { copyToClipboard } from "@/utils/helper";
+import type { UploadProps } from "antd";
 
 const DrawFloorPlan = () => {
-  const mapRef = useRef<HTMLDivElement | null>(null);
-  const [mapData, setMapData] = useState({});
-  const [isTutorialModalOpen, setisTutorialModalOpen] = useState(false);
-  // const [isRoomNameModalOpen, setisRoomNameModalOpen] = useState(false);
-  // const [roomName, setRoomName] = useState("");
+  const mapDivRef = useRef<HTMLDivElement | null>(null);
+  const mapLRef = useRef<L.Map | null>(null);
+
+  const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
+  const [roomData, setRoomData] = useState({});
+  const [floorPlanData, setFloorPlanData] = useState({});
+
+  const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
+  const [roomNameModalOpen, setRoomNameModalOpen] = useState(false);
+
+  const [form] = Form.useForm();
 
   useEffect(() => {
-    const imgUrl = "/images/maps2.png";
-    const imgSize = [577, 1204];
-
     // @ts-ignore
-    if (mapRef.current && !mapRef.current._leaflet_id) {
+    if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
         crs: L.CRS.Simple,
         minZoom: -2,
         maxZoom: 2,
       });
 
+      map.fitBounds([
+        [0, 0],
+        [1000, 1000],
+      ]);
+
       map.zoomControl.setPosition("bottomright");
-
-      var bounds = [[0, 0], imgSize];
-
-      // @ts-ignore
-      L.imageOverlay(imgUrl, bounds).addTo(map);
-      // @ts-ignore
-      map.fitBounds(bounds);
 
       var editableLayers = new L.FeatureGroup();
       map.addLayer(editableLayers);
@@ -48,7 +54,7 @@ const DrawFloorPlan = () => {
             allowIntersection: false,
             drawError: {
               color: "#e1e100",
-              message: "<strong>Oh snap!<strong> you can't draw that!",
+              message: "<strong>Oh snap!<strong> You can't draw that!",
             },
           },
           circle: false,
@@ -89,7 +95,7 @@ const DrawFloorPlan = () => {
             geometry: layer.toGeoJSON().geometry,
           };
 
-          setMapData(editableLayers.toGeoJSON());
+          setRoomData(editableLayers.toGeoJSON());
         }
 
         layer.on("dblclick", function () {
@@ -100,16 +106,61 @@ const DrawFloorPlan = () => {
             if (layer.feature?.properties && layer.feature.properties.name) {
               layer.feature.properties.name = roomName;
             }
-            setMapData(editableLayers.toGeoJSON());
+            setRoomData(editableLayers.toGeoJSON());
           }
         });
       });
 
       map.on("draw:deleted", function (e) {
-        setMapData(editableLayers.toGeoJSON());
+        setRoomData(editableLayers.toGeoJSON());
       });
+
+      mapLRef.current = map;
     }
   }, []);
+
+  useEffect(() => {
+    if (baseImageUrl && mapLRef.current) {
+      const baseImage = new Image();
+      baseImage.src = baseImageUrl;
+
+      baseImage.onload = () => {
+        var bounds = [
+          [0, 0],
+          [baseImage.height, baseImage.width],
+        ];
+
+        // @ts-ignore
+        L.imageOverlay(baseImageUrl, bounds).addTo(mapLRef.current!);
+        // @ts-ignore
+        mapLRef.current!.fitBounds(bounds);
+      };
+
+      baseImage.onerror = (error) => {
+        notification.open({
+          message: "Error loading image:" + error,
+        });
+      };
+    }
+  }, [baseImageUrl]);
+
+  const props: UploadProps = {
+    name: "file",
+    accept: ".png, .jpg, .jpeg, .webp",
+    multiple: false,
+    maxCount: 1,
+    customRequest(options) {
+      const { file, onSuccess } = options;
+      if (file && onSuccess) {
+        // @ts-ignore
+        setBaseImageUrl(URL.createObjectURL(file));
+        setTimeout(() => {
+          onSuccess("ok");
+        }, 0);
+      }
+    },
+    showUploadList: false,
+  };
 
   return (
     <CustomLayout>
@@ -122,7 +173,7 @@ const DrawFloorPlan = () => {
             width: "75%",
             background: "#F5F5F5",
           }}
-          ref={mapRef}
+          ref={mapDivRef}
         />
         <div className="w-1/4 max-h-[89vh] p-5 flex flex-col gap-5 overflow-auto">
           <div className="flex justify-between items-center gap-5">
@@ -130,60 +181,73 @@ const DrawFloorPlan = () => {
             <Button
               type="link"
               className="flex items-center p-0"
-              onClick={() => setisTutorialModalOpen(true)}
+              onClick={() => setTutorialModalOpen(true)}
             >
               <span>Tutorial</span>
               <QuestionCircleOutlined />
             </Button>
           </div>
-          <Form>
+          <Upload {...props}>
+            <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
+          </Upload>
+          <Form layout="vertical" form={form}>
             <Form.Item
-              label="Floor Level"
-              name="floor"
-              rules={[{ required: true, message: "Please input floor level" }]}
+              label="Floor Name"
+              name="floorName"
+              rules={[{ required: true }]}
             >
-              <Input />
-            </Form.Item>
-            <div className="mb-2">GeoJSON Example: (for dev only)</div>
-            <Form.Item className="bg-[#F5F5F5] rounded-lg">
-              <div className="absolute w-full flex justify-end">
-                <Button
-                  onClick={() =>
-                    copyToClipboard(JSON.stringify(mapData, null, 2))
-                  }
-                >
-                  <CopyOutlined />
-                </Button>
-              </div>
-              <pre className="px-3">{JSON.stringify(mapData, null, 2)}</pre>
+              <Input prefix="Lantai" placeholder="Dasar" className="w-full" />
             </Form.Item>
             <Form.Item>
-              <Button type="primary" htmlType="submit">
+              <Button
+                type="primary"
+                htmlType="submit"
+                onClick={() => {
+                  setFloorPlanData(
+                    Object.assign({}, form.getFieldsValue(), roomData),
+                  );
+                }}
+              >
                 Save
               </Button>
             </Form.Item>
           </Form>
+
+          {/* DEV ONLY */}
+          <span>Result</span>
+          <div className="bg-[#F5F5F5] rounded-lg">
+            <pre className="px-3">{JSON.stringify(floorPlanData, null, 2)}</pre>
+          </div>
+          <Button
+            onClick={() =>
+              copyToClipboard(JSON.stringify(floorPlanData, null, 2))
+            }
+          >
+            Copy JSON
+            <CopyOutlined />
+          </Button>
         </div>
       </div>
+
       <Modal
         title="Tutorial"
-        open={isTutorialModalOpen}
-        onOk={() => setisTutorialModalOpen(false)}
-        onCancel={() => setisTutorialModalOpen(false)}
+        open={tutorialModalOpen}
+        onOk={() => setTutorialModalOpen(false)}
+        onCancel={() => setTutorialModalOpen(false)}
       >
         <p>Some contents...</p>
         <p>Some contents...</p>
         <p>Some contents...</p>
       </Modal>
 
-      {/* <Modal
+      <Modal
         title="Room Name"
-        open={isRoomNameModalOpen}
-        onOk={() => setisRoomNameModalOpen(false)}
-        onCancel={() => setisRoomNameModalOpen(false)}
+        open={roomNameModalOpen}
+        onOk={() => setRoomNameModalOpen(false)}
+        onCancel={() => setRoomNameModalOpen(false)}
       >
         <Input placeholder="Enter room name" />
-      </Modal> */}
+      </Modal>
     </CustomLayout>
   );
 };
