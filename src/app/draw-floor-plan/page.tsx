@@ -34,7 +34,7 @@ const DrawFloorPlan = () => {
       var map = L.map("map", {
         crs: L.CRS.Simple,
         minZoom: -2,
-        maxZoom: 2,
+        maxZoom: 10,
       });
 
       map.fitBounds([
@@ -169,13 +169,13 @@ const DrawFloorPlan = () => {
           id="map"
           style={{
             position: "sticky",
-            height: "89vh",
+            height: "90vh",
             width: "75%",
             background: "#F5F5F5",
           }}
           ref={mapDivRef}
         />
-        <div className="w-1/4 max-h-[89vh] p-5 flex flex-col gap-5 overflow-auto">
+        <div className="w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
           <div className="flex justify-between items-center gap-5">
             <span className="font-bold text-lg">Draw Floor Plan</span>
             <Button
