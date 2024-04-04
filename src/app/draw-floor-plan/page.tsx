@@ -6,25 +6,31 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
 import CustomLayout from "@/components/layout/CustomLayout";
+import { QuestionCircleOutlined, UploadOutlined } from "@ant-design/icons";
 import {
-  CopyOutlined,
-  QuestionCircleOutlined,
-  UploadOutlined,
-} from "@ant-design/icons";
-import { Button, Form, Input, Modal, Upload, notification } from "antd";
-import { copyToClipboard } from "@/utils/helper";
+  Button,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Radio,
+  Upload,
+  notification,
+} from "antd";
 import type { UploadProps } from "antd";
+import { labelIcon } from "@/utils/constants";
 
 const DrawFloorPlan = () => {
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapLRef = useRef<L.Map | null>(null);
+  const overlayRef = useRef<L.ImageOverlay | null>(null);
 
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
-  const [roomData, setRoomData] = useState({});
+  const [geoData, setGeoData] = useState({});
   const [floorPlanData, setFloorPlanData] = useState({});
 
   const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
-  const [roomNameModalOpen, setRoomNameModalOpen] = useState(false);
+  const [spacePropModalOpen, setSpacePropModalOpen] = useState(false);
 
   const [form] = Form.useForm();
 
@@ -33,13 +39,13 @@ const DrawFloorPlan = () => {
     if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
         crs: L.CRS.Simple,
-        minZoom: -2,
+        minZoom: -10,
         maxZoom: 10,
       });
 
       map.fitBounds([
         [0, 0],
-        [1000, 1000],
+        [2000, 2000],
       ]);
 
       map.zoomControl.setPosition("bottomright");
@@ -53,6 +59,7 @@ const DrawFloorPlan = () => {
           polygon: {
             allowIntersection: false,
             drawError: {
+              // TODO
               color: "#e1e100",
               message: "<strong>Oh snap!<strong> You can't draw that!",
             },
@@ -70,49 +77,86 @@ const DrawFloorPlan = () => {
       });
       map.addControl(drawControl);
 
+      var labelMarkers: LabelMarkers = {};
       map.on("draw:created", function (e) {
-        var type = (e as L.DrawEvents.Created).layerType,
-          layer = (e as L.DrawEvents.Created).layer;
+        var layer = (e as L.DrawEvents.Created).layer;
+        // TODO use custom modal
+        var category = prompt("Category");
+        var spaceName = prompt("Name");
 
-        var roomName = prompt("Enter room name:");
-
-        if (roomName) {
-          layer.bindTooltip(roomName, {
-            permanent: true,
-            direction: "center",
-          });
-
+        if (category && spaceName) {
+          // layer.bindTooltip(spaceName, {
+          //   permanent: true,
+          //   direction: "center",
+          // });
           editableLayers.addLayer(layer);
 
-          var centroid = (layer as L.Polygon).getCenter();
+          var poi = (layer as L.Polygon).getBounds().getCenter();
+          var labelMarker = L.marker(poi, {
+            draggable: true,
+            icon: labelIcon(spaceName),
+          }).addTo(map);
+          // @ts-ignore
+          labelMarkers[layer._leaflet_id] = labelMarker;
 
           layer.feature = {
             type: "Feature",
             properties: {
-              name: roomName,
-              centroid: [centroid.lat, centroid.lng],
+              category: category,
+              name: spaceName,
+              poi: [poi.lat, poi.lng],
             },
             geometry: layer.toGeoJSON().geometry,
           };
+          setGeoData(editableLayers.toGeoJSON());
 
-          setRoomData(editableLayers.toGeoJSON());
+          labelMarker.on("dragend", function () {
+            if (
+              !(layer as L.Polygon)
+                .getBounds()
+                .contains(labelMarker.getLatLng())
+            ) {
+              labelMarker.setLatLng(poi);
+              return;
+            }
+            poi = labelMarker.getLatLng();
+            layer.feature!.properties.poi = [poi.lat, poi.lng];
+            setGeoData(editableLayers.toGeoJSON());
+          });
+
+          labelMarker.on("dblclick", function () {
+            // TODO use custom modal
+            spaceName = prompt("New name");
+            if (spaceName) {
+              labelMarker.setIcon(labelIcon(spaceName));
+              layer.feature!.properties.name = spaceName;
+              setGeoData(editableLayers.toGeoJSON());
+            }
+          });
         }
-
+        /*
         layer.on("dblclick", function () {
           map.doubleClickZoom.disable();
-          roomName = prompt("Enter new room name:");
-          if (roomName) {
-            layer.setTooltipContent(roomName);
+          spaceName = prompt("Enter new room name:");
+          if (spaceName) {
+            layer.setTooltipContent(spaceName);
             if (layer.feature?.properties && layer.feature.properties.name) {
-              layer.feature.properties.name = roomName;
+              layer.feature.properties.name = spaceName;
             }
-            setRoomData(editableLayers.toGeoJSON());
+            setGeoData(editableLayers.toGeoJSON());
           }
         });
+        */
       });
 
       map.on("draw:deleted", function (e) {
-        setRoomData(editableLayers.toGeoJSON());
+        // @ts-ignore
+        var deletedLayers = e.layers;
+        deletedLayers.eachLayer(function (layer: any) {
+          map.removeLayer(labelMarkers[layer._leaflet_id]);
+          delete labelMarkers[layer._leaflet_id];
+        });
+        setGeoData(editableLayers.toGeoJSON());
       });
 
       mapLRef.current = map;
@@ -130,8 +174,15 @@ const DrawFloorPlan = () => {
           [baseImage.height, baseImage.width],
         ];
 
+        if (overlayRef.current) {
+          mapLRef.current!.removeLayer(overlayRef.current);
+        }
+
         // @ts-ignore
-        L.imageOverlay(baseImageUrl, bounds).addTo(mapLRef.current!);
+        const newOverlay = L.imageOverlay(baseImageUrl, bounds);
+        newOverlay.addTo(mapLRef.current!);
+        overlayRef.current = newOverlay;
+
         // @ts-ignore
         mapLRef.current!.fitBounds(bounds);
       };
@@ -146,7 +197,7 @@ const DrawFloorPlan = () => {
 
   const props: UploadProps = {
     name: "file",
-    accept: ".png, .jpg, .jpeg, .webp",
+    accept: ".png, .jpg, .jpeg, .webp, .svg",
     multiple: false,
     maxCount: 1,
     customRequest(options) {
@@ -187,45 +238,55 @@ const DrawFloorPlan = () => {
               <QuestionCircleOutlined />
             </Button>
           </div>
-          <Upload {...props}>
-            <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
-          </Upload>
           <Form layout="vertical" form={form}>
+            <Form.Item>
+              <Upload {...props}>
+                <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
+              </Upload>
+            </Form.Item>
+            <Form.Item
+              label="Floor Level"
+              name="floorLevel"
+              rules={[{ required: true }]}
+            >
+              <InputNumber placeholder="0" className="w-full" />
+            </Form.Item>
             <Form.Item
               label="Floor Name"
               name="floorName"
               rules={[{ required: true }]}
             >
-              <Input prefix="Lantai" placeholder="Dasar" className="w-full" />
+              <Input
+                prefix="Lantai"
+                placeholder="Dasar"
+                className="w-full"
+                allowClear
+              />
             </Form.Item>
-            <Form.Item>
+            <Form.Item className="mt-10">
               <Button
                 type="primary"
                 htmlType="submit"
                 onClick={() => {
                   setFloorPlanData(
-                    Object.assign({}, form.getFieldsValue(), roomData),
+                    Object.assign(
+                      {},
+                      {
+                        floor: {
+                          level: form.getFieldValue("floorLevel"),
+                          name: form.getFieldValue("floorName"),
+                        },
+                      },
+                      geoData,
+                    ),
                   );
+                  console.log(JSON.stringify(floorPlanData, null, 2));
                 }}
               >
                 Save
               </Button>
             </Form.Item>
           </Form>
-
-          {/* DEV ONLY */}
-          <span>Result</span>
-          <div className="bg-[#F5F5F5] rounded-lg">
-            <pre className="px-3">{JSON.stringify(floorPlanData, null, 2)}</pre>
-          </div>
-          <Button
-            onClick={() =>
-              copyToClipboard(JSON.stringify(floorPlanData, null, 2))
-            }
-          >
-            Copy JSON
-            <CopyOutlined />
-          </Button>
         </div>
       </div>
 
@@ -241,15 +302,29 @@ const DrawFloorPlan = () => {
       </Modal>
 
       <Modal
-        title="Room Name"
-        open={roomNameModalOpen}
-        onOk={() => setRoomNameModalOpen(false)}
-        onCancel={() => setRoomNameModalOpen(false)}
+        title="Create Space"
+        open={spacePropModalOpen}
+        onOk={() => setSpacePropModalOpen(false)}
+        onCancel={() => setSpacePropModalOpen(false)}
       >
-        <Input placeholder="Enter room name" />
+        <Form layout="vertical" className="mt-5">
+          <Form.Item label="Type" required>
+            <Radio.Group defaultValue={"room"}>
+              <Radio value="room">Room</Radio>
+              <Radio value="corridor">Corridor</Radio>
+            </Radio.Group>
+          </Form.Item>
+          <Form.Item label="Name" required>
+            <Input placeholder="AX.0Y" />
+          </Form.Item>
+        </Form>
       </Modal>
     </CustomLayout>
   );
 };
 
 export default DrawFloorPlan;
+
+interface LabelMarkers {
+  [key: string]: L.Marker;
+}
