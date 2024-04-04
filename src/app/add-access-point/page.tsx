@@ -7,12 +7,7 @@ import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
 import CustomLayout from "@/components/layout/CustomLayout";
 import { CopyOutlined, QuestionCircleOutlined } from "@ant-design/icons";
-import {
-  Alert,
-  Button,
-  Form,
-  Modal,
-} from "antd";
+import { Alert, Button, Form, Modal } from "antd";
 import { copyToClipboard } from "@/utils/helper";
 import { apIcon, labelIcon } from "@/utils/constants";
 // example
@@ -24,7 +19,7 @@ const AddAccessPoint = () => {
   const [isTutorialModalOpen, setIsTutorialModalOpen] = useState(false);
 
   useEffect(() => {
-    const imgSize = [577, 1204];
+    const imgSize = [885, 1864];
 
     // @ts-ignore
     if (mapRef.current && !mapRef.current._leaflet_id) {
@@ -43,7 +38,6 @@ const AddAccessPoint = () => {
 
       // @ts-ignore
       function onEachFeature(feature: any, layer: any) {
-
         function handleClick(e: any) {
           map.doubleClickZoom.disable();
           var BSSID = prompt("Enter BSSID:");
@@ -74,20 +68,19 @@ const AddAccessPoint = () => {
           }).addTo(map);
 
           label.on("click", function (e: any) {
-            handleClick(e)
-          })
+            handleClick(e);
+          });
 
           layer.on("click", function (e: any) {
-            handleClick(e)
+            handleClick(e);
           });
 
           if (feature.properties.corridor) {
-            layer.setStyle({ fillColor: 'lightblue', color: 'white' });
+            layer.setStyle({ fillColor: "lightblue", color: "white" });
           } else {
-            layer.setStyle({ fillColor: 'cadetblue', color: 'white' });
+            layer.setStyle({ fillColor: "cadetblue", color: "white" });
           }
         }
-
       }
 
       // @ts-ignore
@@ -126,7 +119,7 @@ const AddAccessPoint = () => {
       <div className="w-full flex">
         <div className="w-3/4">
           <Alert
-            message="Click anywhere within the colored area to add an access point"
+            message="Click anywhere within the room (blue/green area) to add an access point"
             type="warning"
             closable
             showIcon
