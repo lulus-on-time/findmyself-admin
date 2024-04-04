@@ -6,7 +6,11 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
 import CustomLayout from "@/components/layout/CustomLayout";
-import { QuestionCircleOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+  CopyOutlined,
+  QuestionCircleOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import {
   Button,
   Form,
@@ -19,6 +23,7 @@ import {
 } from "antd";
 import type { UploadProps } from "antd";
 import { labelIcon } from "@/utils/constants";
+import { copyToClipboard } from "@/utils/helper";
 
 const DrawFloorPlan = () => {
   const mapDivRef = useRef<HTMLDivElement | null>(null);
@@ -269,15 +274,38 @@ const DrawFloorPlan = () => {
                 htmlType="submit"
                 onClick={() => {
                   setFloorPlanData(
-                    Object.assign({}, form.getFieldsValue(), geoData),
+                    Object.assign(
+                      {},
+                      {
+                        floor: {
+                          level: form.getFieldValue("floorLevel"),
+                          name: form.getFieldValue("floorName"),
+                        },
+                      },
+                      geoData,
+                    ),
                   );
-                  console.log(JSON.stringify(floorPlanData, null, 2));
                 }}
               >
                 Save
               </Button>
             </Form.Item>
           </Form>
+
+          {/* DEV ONLY */}
+          <span>Result</span>
+          <div className="bg-[#F5F5F5] rounded-lg">
+            <pre className="px-3">{JSON.stringify(floorPlanData, null, 2)}</pre>
+          </div>
+          <Button
+            onClick={() =>
+              copyToClipboard(JSON.stringify(floorPlanData, null, 2))
+            }
+          >
+            Copy JSON
+            <CopyOutlined />
+          </Button>
+          {/* END DEV ONLY */}
         </div>
       </div>
 
