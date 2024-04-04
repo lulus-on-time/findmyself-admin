@@ -269,16 +269,7 @@ const DrawFloorPlan = () => {
                 htmlType="submit"
                 onClick={() => {
                   setFloorPlanData(
-                    Object.assign(
-                      {},
-                      {
-                        floor: {
-                          level: form.getFieldValue("floorLevel"),
-                          name: form.getFieldValue("floorName"),
-                        },
-                      },
-                      geoData,
-                    ),
+                    Object.assign({}, form.getFieldsValue(), geoData),
                   );
                   console.log(JSON.stringify(floorPlanData, null, 2));
                 }}
@@ -287,6 +278,21 @@ const DrawFloorPlan = () => {
               </Button>
             </Form.Item>
           </Form>
+
+          {/* DEV ONLY */}
+          <span>Result</span>
+          <div className="bg-[#F5F5F5] rounded-lg">
+            <pre className="px-3">{JSON.stringify(floorPlanData, null, 2)}</pre>
+          </div>
+          <Button
+            onClick={() =>
+              copyToClipboard(JSON.stringify(floorPlanData, null, 2))
+            }
+          >
+            Copy JSON
+            <CopyOutlined />
+          </Button>
+          {/* END DEV ONLY */}
         </div>
       </div>
 
