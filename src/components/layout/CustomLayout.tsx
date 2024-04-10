@@ -19,7 +19,7 @@ const CustomLayout = ({ children, ...props }: Props) => {
   return (
     <ConfigProvider theme={theme}>
       <Layout className="min-h-screen">
-        <Header className="sticky top-0 z-10 w-full flex items-center gap-5 min-h-[10vh]">
+        <Header className="sticky top-0 z-10 w-full flex items-center gap-5 h-[12vh]">
           <div className="text-white font-semibold">
             FindMyself <i className="text-yellow-500 font-medium">Admin</i>
           </div>
@@ -28,7 +28,7 @@ const CustomLayout = ({ children, ...props }: Props) => {
             mode="horizontal"
             defaultSelectedKeys={["2"]}
             items={items}
-            style={{ flex: 1, minWidth: 0 }}
+            style={{ flex: 1, minWidth: 0, maxHeight: "100%" }}
           />
         </Header>
         <Content>{children}</Content>

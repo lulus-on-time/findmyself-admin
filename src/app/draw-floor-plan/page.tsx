@@ -6,11 +6,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
 import CustomLayout from "@/components/layout/CustomLayout";
-import {
-  CopyOutlined,
-  QuestionCircleOutlined,
-  UploadOutlined,
-} from "@ant-design/icons";
+import { QuestionCircleOutlined, UploadOutlined } from "@ant-design/icons";
 import {
   Button,
   Form,
@@ -23,21 +19,29 @@ import {
 } from "antd";
 import type { UploadProps } from "antd";
 import { labelIcon } from "@/utils/constants";
-import { copyToClipboard } from "@/utils/helper";
+
+interface LabelMarkers {
+  [key: string]: L.Marker;
+}
 
 const DrawFloorPlan = () => {
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapLRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.ImageOverlay | null>(null);
+  const editableLayers = useRef<L.FeatureGroup | null>(null);
+  const globalLayer = useRef<L.Polygon | null>(null);
 
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
-  const [geoData, setGeoData] = useState({});
-  const [floorPlanData, setFloorPlanData] = useState({});
+  const [categoryValue, setCategoryValue] = useState("room");
+  const [labelMarkersDict, setLabelMarkersDict] = useState<LabelMarkers>({});
 
   const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
-  const [spacePropModalOpen, setSpacePropModalOpen] = useState(false);
+  const [createSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
+  const [editSpaceModalOpen, setEditSpaceModalOpen] = useState(false);
 
-  const [form] = Form.useForm();
+  const [floorPlanForm] = Form.useForm();
+  const [createSpaceForm] = Form.useForm();
+  const [editSpaceForm] = Form.useForm();
 
   useEffect(() => {
     // @ts-ignore
@@ -55,8 +59,8 @@ const DrawFloorPlan = () => {
 
       map.zoomControl.setPosition("bottomright");
 
-      var editableLayers = new L.FeatureGroup();
-      map.addLayer(editableLayers);
+      editableLayers.current = new L.FeatureGroup();
+      map.addLayer(editableLayers.current);
 
       var drawControl = new L.Control.Draw({
         draw: {
@@ -64,9 +68,8 @@ const DrawFloorPlan = () => {
           polygon: {
             allowIntersection: false,
             drawError: {
-              // TODO
               color: "#e1e100",
-              message: "<strong>Oh snap!<strong> You can't draw that!",
+              message: "Polygon lines must not intersect",
             },
           },
           circle: false,
@@ -75,98 +78,33 @@ const DrawFloorPlan = () => {
           marker: false,
         },
         edit: {
-          featureGroup: editableLayers,
+          featureGroup: editableLayers.current,
           remove: true,
           edit: false,
         },
       });
       map.addControl(drawControl);
 
-      var labelMarkers: LabelMarkers = {};
       map.on("draw:created", function (e) {
-        var layer = (e as L.DrawEvents.Created).layer;
-        // TODO use custom modal
-        var category = prompt("Category");
-        var spaceName = prompt("Name");
+        const layer = (e as L.DrawEvents.Created).layer;
+        // @ts-ignore
+        globalLayer.current = layer;
 
-        if (category && spaceName) {
-          // layer.bindTooltip(spaceName, {
-          //   permanent: true,
-          //   direction: "center",
-          // });
-          editableLayers.addLayer(layer);
-
-          var poi = (layer as L.Polygon).getBounds().getCenter();
-          var labelMarker = L.marker(poi, {
-            draggable: true,
-            icon: labelIcon(spaceName),
-          }).addTo(map);
-          // @ts-ignore
-          labelMarkers[layer._leaflet_id] = labelMarker;
-
-          layer.feature = {
-            type: "Feature",
-            properties: {
-              category: category,
-              name: spaceName,
-              poi: [poi.lat, poi.lng],
-            },
-            geometry: layer.toGeoJSON().geometry,
-          };
-          setGeoData(editableLayers.toGeoJSON());
-
-          labelMarker.on("dragend", function () {
-            if (
-              !(layer as L.Polygon)
-                .getBounds()
-                .contains(labelMarker.getLatLng())
-            ) {
-              labelMarker.setLatLng(poi);
-              return;
-            }
-            poi = labelMarker.getLatLng();
-            layer.feature!.properties.poi = [poi.lat, poi.lng];
-            setGeoData(editableLayers.toGeoJSON());
-          });
-
-          labelMarker.on("dblclick", function () {
-            // TODO use custom modal
-            spaceName = prompt("New name");
-            if (spaceName) {
-              labelMarker.setIcon(labelIcon(spaceName));
-              layer.feature!.properties.name = spaceName;
-              setGeoData(editableLayers.toGeoJSON());
-            }
-          });
-        }
-        /*
-        layer.on("dblclick", function () {
-          map.doubleClickZoom.disable();
-          spaceName = prompt("Enter new room name:");
-          if (spaceName) {
-            layer.setTooltipContent(spaceName);
-            if (layer.feature?.properties && layer.feature.properties.name) {
-              layer.feature.properties.name = spaceName;
-            }
-            setGeoData(editableLayers.toGeoJSON());
-          }
-        });
-        */
+        setCreateSpaceModalOpen(true);
       });
 
       map.on("draw:deleted", function (e) {
         // @ts-ignore
         var deletedLayers = e.layers;
         deletedLayers.eachLayer(function (layer: any) {
-          map.removeLayer(labelMarkers[layer._leaflet_id]);
-          delete labelMarkers[layer._leaflet_id];
+          map.removeLayer(labelMarkersDict[layer._leaflet_id]);
+          delete labelMarkersDict[layer._leaflet_id];
         });
-        setGeoData(editableLayers.toGeoJSON());
       });
 
       mapLRef.current = map;
     }
-  }, []);
+  }, [labelMarkersDict]);
 
   useEffect(() => {
     if (baseImageUrl && mapLRef.current) {
@@ -194,7 +132,7 @@ const DrawFloorPlan = () => {
 
       baseImage.onerror = (error) => {
         notification.open({
-          message: "Error loading image:" + error,
+          message: "Error loading image. Please try again.",
         });
       };
     }
@@ -218,22 +156,116 @@ const DrawFloorPlan = () => {
     showUploadList: false,
   };
 
+  function createSpace() {
+    createSpaceForm
+      .validateFields()
+      .then((values) => {
+        var category = values.category;
+        var spaceName = values.spaceName;
+
+        var map = mapLRef.current;
+        var layer = globalLayer.current;
+        // @ts-ignore
+        editableLayers.current!.addLayer(layer!);
+
+        var poi = (layer as L.Polygon).getBounds().getCenter();
+        var labelMarker = L.marker(poi, {
+          draggable: true,
+          icon: labelIcon(spaceName),
+        }).addTo(map!);
+        // @ts-ignore
+        labelMarkersDict[layer._leaflet_id] = labelMarker;
+
+        layer!.feature = {
+          type: "Feature",
+          properties: {
+            category: category,
+            name: spaceName,
+            poi: [poi.lat, poi.lng],
+          },
+          geometry: layer!.toGeoJSON().geometry,
+        };
+
+        labelMarker.on("dragend", function () {
+          if (
+            !(layer as L.Polygon).getBounds().contains(labelMarker.getLatLng())
+          ) {
+            labelMarker.setLatLng(poi);
+            return;
+          }
+          poi = labelMarker.getLatLng();
+          layer!.feature!.properties.poi = [poi.lat, poi.lng];
+        });
+
+        labelMarker.on("dblclick", function () {
+          globalLayer.current = layer;
+          setEditSpaceModalOpen(true);
+          editSpaceForm.setFieldValue(
+            "category",
+            layer!.feature!.properties.category,
+          );
+          editSpaceForm.setFieldValue(
+            "spaceName",
+            layer!.feature!.properties.name,
+          );
+        });
+
+        setCreateSpaceModalOpen(false);
+        createSpaceForm.resetFields();
+      })
+      .catch((errorInfo) => {
+        console.log("Validation failed:", errorInfo); // TODO
+      });
+  }
+
+  function editSpace() {
+    editSpaceForm
+      .validateFields()
+      .then((values) => {
+        var category = values.category;
+        var spaceName = values.spaceName;
+
+        var layer = globalLayer.current;
+        // @ts-ignore
+        var labelMarker = labelMarkersDict[layer._leaflet_id];
+        labelMarker.setIcon(labelIcon(spaceName));
+        layer!.feature!.properties.category = category;
+        layer!.feature!.properties.name = spaceName;
+
+        setEditSpaceModalOpen(false);
+        editSpaceForm.resetFields();
+      })
+      .catch((errorInfo) => {
+        console.log("Validation failed:", errorInfo); // TODO
+      });
+  }
+
+  function cancelCreateSpace() {
+    setCreateSpaceModalOpen(false);
+    createSpaceForm.resetFields();
+  }
+
+  function cancelEditSpace() {
+    setEditSpaceModalOpen(false);
+    editSpaceForm.resetFields();
+  }
+
   return (
     <CustomLayout>
-      <div className="w-full flex">
+      <div className="w-full flex flex-col lg:flex-row">
         <div
           id="map"
           style={{
             position: "sticky",
-            height: "90vh",
-            width: "75%",
+            height: "88vh",
             background: "#F5F5F5",
           }}
           ref={mapDivRef}
+          className="w-full lg:w-3/4"
         />
-        <div className="w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
+        <div className="w-full lg:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
           <div className="flex justify-between items-center gap-5">
-            <span className="font-bold text-lg">Draw Floor Plan</span>
+            <h3>Draw Floor Plan</h3>
             <Button
               type="link"
               className="flex items-center p-0"
@@ -243,7 +275,7 @@ const DrawFloorPlan = () => {
               <QuestionCircleOutlined />
             </Button>
           </div>
-          <Form layout="vertical" form={form}>
+          <Form layout="vertical" form={floorPlanForm}>
             <Form.Item>
               <Upload {...props}>
                 <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
@@ -273,39 +305,30 @@ const DrawFloorPlan = () => {
                 type="primary"
                 htmlType="submit"
                 onClick={() => {
-                  setFloorPlanData(
-                    Object.assign(
-                      {},
-                      {
-                        floor: {
-                          level: form.getFieldValue("floorLevel"),
-                          name: form.getFieldValue("floorName"),
+                  floorPlanForm
+                    .validateFields()
+                    .then((values) => {
+                      var data = Object.assign(
+                        {},
+                        {
+                          floor: {
+                            level: values.floorLevel,
+                            name: values.floorName,
+                          },
                         },
-                      },
-                      geoData,
-                    ),
-                  );
+                        editableLayers.current?.toGeoJSON(),
+                      );
+                      console.log(JSON.stringify(data, null, 2));
+                    })
+                    .catch((errorInfo) => {
+                      console.log("Validation failed:", errorInfo); // TODO
+                    });
                 }}
               >
                 Save
               </Button>
             </Form.Item>
           </Form>
-
-          {/* DEV ONLY */}
-          <span>Result</span>
-          <div className="bg-[#F5F5F5] rounded-lg">
-            <pre className="px-3">{JSON.stringify(floorPlanData, null, 2)}</pre>
-          </div>
-          <Button
-            onClick={() =>
-              copyToClipboard(JSON.stringify(floorPlanData, null, 2))
-            }
-          >
-            Copy JSON
-            <CopyOutlined />
-          </Button>
-          {/* END DEV ONLY */}
         </div>
       </div>
 
@@ -322,18 +345,47 @@ const DrawFloorPlan = () => {
 
       <Modal
         title="Create Space"
-        open={spacePropModalOpen}
-        onOk={() => setSpacePropModalOpen(false)}
-        onCancel={() => setSpacePropModalOpen(false)}
+        open={createSpaceModalOpen}
+        onOk={createSpace}
+        onCancel={cancelCreateSpace}
       >
-        <Form layout="vertical" className="mt-5">
-          <Form.Item label="Type" required>
-            <Radio.Group defaultValue={"room"}>
+        <Form
+          layout="vertical"
+          className="mt-5"
+          form={createSpaceForm}
+          initialValues={{ ["category"]: "room" }}
+        >
+          <Form.Item label="Type" name="category" rules={[{ required: true }]}>
+            <Radio.Group value={categoryValue}>
               <Radio value="room">Room</Radio>
               <Radio value="corridor">Corridor</Radio>
             </Radio.Group>
           </Form.Item>
-          <Form.Item label="Name" required>
+          <Form.Item label="Name" name="spaceName" rules={[{ required: true }]}>
+            <Input placeholder="AX.0Y" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Edit Space"
+        open={editSpaceModalOpen}
+        onOk={editSpace}
+        onCancel={cancelEditSpace}
+      >
+        <Form
+          layout="vertical"
+          className="mt-5"
+          form={editSpaceForm}
+          initialValues={{ ["category"]: "room" }}
+        >
+          <Form.Item label="Type" name="category" rules={[{ required: true }]}>
+            <Radio.Group value={categoryValue}>
+              <Radio value="room">Room</Radio>
+              <Radio value="corridor">Corridor</Radio>
+            </Radio.Group>
+          </Form.Item>
+          <Form.Item label="Name" name="spaceName" rules={[{ required: true }]}>
             <Input placeholder="AX.0Y" />
           </Form.Item>
         </Form>
@@ -343,7 +395,3 @@ const DrawFloorPlan = () => {
 };
 
 export default DrawFloorPlan;
-
-interface LabelMarkers {
-  [key: string]: L.Marker;
-}
