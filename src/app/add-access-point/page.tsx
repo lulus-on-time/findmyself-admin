@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import L, { marker } from "leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
@@ -9,7 +9,7 @@ import CustomLayout from "@/components/layout/CustomLayout";
 import { CopyOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Alert, Button, Form, Modal } from "antd";
 import { copyToClipboard } from "@/utils/helper";
-import { apIcon, labelIcon } from "@/utils/constants";
+import { accessPointIcon, spaceLabelIcon } from "@/components/icons/marker";
 // example
 import { roomGeoJSON } from "@/utils/geojson";
 
@@ -44,7 +44,7 @@ const AddAccessPoint = () => {
           if (BSSID) {
             var roomName = layer.feature.properties.name;
             var marker = L.marker(e.latlng, {
-              icon: apIcon,
+              icon: accessPointIcon,
             })
               .bindPopup(`${BSSID} in ${roomName}`)
               .addTo(editableLayers);
@@ -63,8 +63,8 @@ const AddAccessPoint = () => {
         }
 
         if (feature.properties && feature.properties.name) {
-          var label = L.marker(feature.properties.centroid, {
-            icon: labelIcon(feature.properties.name),
+          var label = L.marker(feature.properties.poi, {
+            icon: spaceLabelIcon(feature.properties.name),
           }).addTo(map);
 
           label.on("click", function (e: any) {

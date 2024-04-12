@@ -17,20 +17,24 @@ import {
   Input,
   InputNumber,
   Modal,
-  Popconfirm,
   Radio,
   Tooltip,
   Upload,
   notification,
 } from "antd";
 import type { UploadProps } from "antd";
-import { labelIcon } from "@/utils/constants";
+import { spaceLabelIcon } from "@/components/icons/marker";
+import { postCreateFloorPlan } from "@/services/floorPlan";
+import { useRouter } from "next/navigation";
+import { PAGE_ROUTES } from "@/config/constants";
 
 interface LabelMarkers {
   [key: string]: L.Marker;
 }
 
-const CreateFloorPlan = () => {
+const CreateFloorPlanPage = () => {
+  const router = useRouter();
+
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapLRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.ImageOverlay | null>(null);
@@ -41,6 +45,7 @@ const CreateFloorPlan = () => {
   const [categoryValue, setCategoryValue] = useState("room");
   const [labelMarkersDict, setLabelMarkersDict] = useState<LabelMarkers>({});
 
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
   const [createSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
   const [editSpaceModalOpen, setEditSpaceModalOpen] = useState(false);
@@ -138,8 +143,11 @@ const CreateFloorPlan = () => {
 
       baseImage.onerror = (error) => {
         notification.open({
-          message: "Error loading image. Please try again.",
+          type: "error",
+          message: "Error loading image",
+          description: "Please try again.",
         });
+        console.error(error);
       };
     }
   }, [baseImageUrl]);
@@ -172,7 +180,7 @@ const CreateFloorPlan = () => {
     var poi = (layer as L.Polygon).getBounds().getCenter();
     var labelMarker = L.marker(poi, {
       draggable: true,
-      icon: labelIcon(spaceName),
+      icon: spaceLabelIcon(spaceName),
     }).addTo(map!);
     // @ts-ignore
     labelMarkersDict[layer._leaflet_id] = labelMarker;
@@ -217,7 +225,7 @@ const CreateFloorPlan = () => {
     var layer = globalLayer.current;
     // @ts-ignore
     var labelMarker = labelMarkersDict[layer._leaflet_id];
-    labelMarker.setIcon(labelIcon(spaceName));
+    labelMarker.setIcon(spaceLabelIcon(spaceName));
     layer!.feature!.properties.category = category;
     layer!.feature!.properties.name = spaceName;
 
@@ -238,6 +246,7 @@ const CreateFloorPlan = () => {
   };
 
   const onFinish = async (values: any) => {
+    setIsLoading(true);
     const dataToSend = Object.assign(
       {},
       {
@@ -248,7 +257,30 @@ const CreateFloorPlan = () => {
       },
       editableLayers.current?.toGeoJSON(),
     );
-    console.log(JSON.stringify(dataToSend, null, 2));
+    // console.log(JSON.stringify(dataToSend, null, 2));
+
+    try {
+      const response = await postCreateFloorPlan(dataToSend);
+      if (response.status === 200) {
+        router.push(PAGE_ROUTES.floorPlanList);
+      }
+    } catch (error: any) {
+      setIsLoading(false);
+      if (error.response?.data?.error?.message) {
+        notification.open({
+          type: "error",
+          message: "Error submitting form",
+          description: error.response.data.error.message,
+        });
+      } else {
+        console.error(error);
+        notification.open({
+          type: "error",
+          message: "Error submitting form",
+          description: "An unexpected error occurred.",
+        });
+      }
+    }
   };
 
   const onFinishFailed = (errorInfo: any) => {
@@ -284,6 +316,7 @@ const CreateFloorPlan = () => {
             layout="vertical"
             onFinish={onFinish}
             onFinishFailed={onFinishFailed}
+            disabled={isLoading}
           >
             <Form.Item>
               <Upload {...props}>
@@ -317,7 +350,7 @@ const CreateFloorPlan = () => {
               />
             </Form.Item>
             <Form.Item className="mt-10">
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={isLoading}>
                 Submit
               </Button>
             </Form.Item>
@@ -407,4 +440,4 @@ const CreateFloorPlan = () => {
   );
 };
 
-export default CreateFloorPlan;
+export default CreateFloorPlanPage;
