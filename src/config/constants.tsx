@@ -1,3 +1,4 @@
 export const PAGE_ROUTES = {
-  floorPlanList: "/floor-plan-list",
+  createFloorPlan: "/floor-plan/create",
+  floorPlanList: "/floor-plan",
 };
