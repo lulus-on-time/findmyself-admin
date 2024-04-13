@@ -16,43 +16,74 @@ import {
   Form,
   Input,
   InputNumber,
-  Modal,
-  Radio,
+  Switch,
   Tooltip,
   Upload,
   notification,
 } from "antd";
 import type { UploadProps } from "antd";
 import { spaceLabelIcon } from "@/components/icons/marker";
-import { postCreateFloorPlan } from "@/services/floorPlan";
+import { getFloorPlanDetail } from "@/services/floorPlan";
 import { useRouter } from "next/navigation";
 import { PAGE_ROUTES } from "@/config/constants";
-import { LabelMarkers } from "../type";
-import FpTutorialModal from "@/components/modals/FpTutorialModal";
+import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import SpaceDetailModal from "@/components/modals/CreateSpaceModal";
+import FpTutorialModal from "@/components/modals/FpTutorialModal";
+import { LabelMarkers } from "../type";
 
-const CreateFloorPlanPage = () => {
+const EditFloorPlanPage = ({ params }: { params: { id: any } }) => {
+  const floorId = params.id;
   const router = useRouter();
-
+  // useRef
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapLRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.ImageOverlay | null>(null);
   const editableLayers = useRef<L.FeatureGroup | null>(null);
   const globalLayer = useRef<L.Polygon | null>(null);
-
+  const drawControlRef = useRef<any>(null);
+  //
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
   const [categoryValue] = useState("room");
   const [labelMarkersDict] = useState<LabelMarkers>({});
-
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [allowEdit, setAllowEdit] = useState<boolean>(false);
+  // Modal
   const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
   const [createSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
   const [editSpaceModalOpen, setEditSpaceModalOpen] = useState(false);
-
+  // Form
   const [createSpaceForm] = Form.useForm();
   const [editSpaceForm] = Form.useForm();
+  const [floorPlanForm] = Form.useForm();
+  // Service
+  const [isFetching, setIsFetching] = useState<boolean>(false);
+  const [errorStatus, setErrorStatus] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  var floorPlanData: any = null;
 
   useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setIsFetching(true);
+    try {
+      const response = await getFloorPlanDetail(floorId);
+      floorPlanData = response.data;
+      initMap();
+      setIsFetching(false);
+    } catch (error: any) {
+      setErrorStatus(true);
+      setErrorMessage(error.toString());
+      setIsFetching(false);
+    }
+  };
+
+  const initMap = () => {
+    floorPlanForm.setFieldValue("floorLevel", floorPlanData.floor.level);
+    floorPlanForm.setFieldValue("floorName", floorPlanData.floor.name);
+
     // @ts-ignore
     if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
@@ -60,18 +91,60 @@ const CreateFloorPlanPage = () => {
         minZoom: -10,
         maxZoom: 10,
       });
-
+      map.zoomControl.setPosition("bottomright");
       map.fitBounds([
         [0, 0],
-        [2000, 2000],
+        [floorPlanData.floor.maxY, floorPlanData.floor.maxX],
       ]);
-
-      map.zoomControl.setPosition("bottomright");
 
       editableLayers.current = new L.FeatureGroup();
       map.addLayer(editableLayers.current);
+      // @ts-ignore
+      function onEachFeature(feature: any, layer: any) {
+        if (feature.properties.category === "corridor") {
+          layer.setStyle({ fillColor: "lightblue", color: "white" });
+        } else {
+          layer.setStyle({ fillColor: "cadetblue", color: "white" });
+        }
 
-      var drawControl = new L.Control.Draw({
+        var labelMarker = L.marker(feature.properties.poi, {
+          draggable: true,
+          icon: spaceLabelIcon(feature.properties.name),
+        }).addTo(map);
+        labelMarkersDict[feature.properties.id] = labelMarker;
+
+        labelMarker.on("dragend", function () {
+          if (
+            !(layer as L.Polygon).getBounds().contains(labelMarker.getLatLng())
+          ) {
+            labelMarker.setLatLng(feature.properties.poi);
+            return;
+          }
+          var poi = labelMarker.getLatLng();
+          layer!.feature!.properties.poi = [poi.lat, poi.lng];
+        });
+
+        labelMarker.on("dblclick", function () {
+          globalLayer.current = layer;
+          setEditSpaceModalOpen(true);
+          editSpaceForm.setFieldValue(
+            "category",
+            layer!.feature!.properties.category,
+          );
+          editSpaceForm.setFieldValue(
+            "spaceName",
+            layer!.feature!.properties.name,
+          );
+        });
+
+        editableLayers.current!.addLayer(layer);
+      }
+
+      L.geoJSON(floorPlanData.geojson, {
+        onEachFeature: onEachFeature,
+      });
+
+      const drawControl = new L.Control.Draw({
         draw: {
           polyline: false,
           polygon: {
@@ -92,7 +165,7 @@ const CreateFloorPlanPage = () => {
           edit: false,
         },
       });
-      map.addControl(drawControl);
+      drawControlRef.current = drawControl;
 
       map.on("draw:created", function (e) {
         const layer = (e as L.DrawEvents.Created).layer;
@@ -107,14 +180,19 @@ const CreateFloorPlanPage = () => {
         // @ts-ignore
         var deletedLayers = e.layers;
         deletedLayers.eachLayer(function (layer: any) {
-          map.removeLayer(labelMarkersDict[layer._leaflet_id]);
-          delete labelMarkersDict[layer._leaflet_id];
+          if (layer.feature.properties.id) {
+            map.removeLayer(labelMarkersDict[layer.feature.properties.id]);
+            delete labelMarkersDict[layer.feature.properties.id];
+          } else {
+            map.removeLayer(labelMarkersDict[layer._leaflet_id]);
+            delete labelMarkersDict[layer._leaflet_id];
+          }
         });
       });
 
       mapLRef.current = map;
     }
-  }, [labelMarkersDict]);
+  };
 
   useEffect(() => {
     if (baseImageUrl && mapLRef.current) {
@@ -222,8 +300,12 @@ const CreateFloorPlanPage = () => {
     var spaceName = values.spaceName;
 
     var layer = globalLayer.current;
-    // @ts-ignore
-    var labelMarker = labelMarkersDict[layer._leaflet_id];
+    if (layer?.feature?.properties.id) {
+      var labelMarker = labelMarkersDict[layer.feature.properties.id];
+    } else {
+      // @ts-ignore
+      var labelMarker = labelMarkersDict[layer._leaflet_id];
+    }
     labelMarker.setIcon(spaceLabelIcon(spaceName));
     layer!.feature!.properties.category = category;
     layer!.feature!.properties.name = spaceName;
@@ -245,46 +327,51 @@ const CreateFloorPlanPage = () => {
   };
 
   const onFinish = async (values: any) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     const dataToSend = Object.assign(
       {},
       {
         floor: {
+          id: floorId,
           level: values.floorLevel,
           name: values.floorName,
         },
       },
       editableLayers.current?.toGeoJSON(),
     );
-    // console.log(JSON.stringify(dataToSend, null, 2));
+    console.log(JSON.stringify(dataToSend, null, 2));
 
-    try {
-      const response = await postCreateFloorPlan(dataToSend);
-      if (response.status === 200) {
-        router.push(PAGE_ROUTES.floorPlanList);
-      }
-    } catch (error: any) {
-      setIsLoading(false);
-      if (error.response?.data?.error?.message) {
-        notification.open({
-          type: "error",
-          message: "Error submitting form",
-          description: error.response.data.error.message,
-        });
-      } else {
-        console.error(error);
-        notification.open({
-          type: "error",
-          message: "Error submitting form",
-          description: "An unexpected error occurred.",
-        });
-      }
-    }
+    // try {
+    //   const response = await postCreateFloorPlan(dataToSend);
+    //   if (response.status === 200) {
+    //     router.push(PAGE_ROUTES.floorPlanList);
+    //   }
+    // } catch (error: any) {
+    //   setIsSubmitting(false);
+    //   if (error.response?.data?.error?.message) {
+    //     notification.open({
+    //       type: "error",
+    //       message: "Error submitting form",
+    //       description: error.response.data.error.message,
+    //     });
+    //   } else {
+    //     console.error(error);
+    //     notification.open({
+    //       type: "error",
+    //       message: "Error submitting form",
+    //       description: "An unexpected error occurred.",
+    //     });
+    //   }
+    // }
   };
 
   const onFinishFailed = (errorInfo: any) => {
     console.error("Failed: ", errorInfo);
   };
+
+  if (isFetching) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <CustomLayout>
@@ -301,7 +388,19 @@ const CreateFloorPlanPage = () => {
         />
         <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
           <div className="flex justify-between items-center gap-5">
-            <h3>Create Floor Plan</h3>
+            <div className="flex items-center gap-3">
+              <Switch
+                onChange={(checked: boolean) => {
+                  setAllowEdit(checked);
+                  if (checked) {
+                    mapLRef.current?.addControl(drawControlRef.current);
+                  } else {
+                    mapLRef.current?.removeControl(drawControlRef.current);
+                  }
+                }}
+              />
+              <h3>Edit Floor Plan</h3>
+            </div>
             <Button
               type="link"
               className="flex items-center p-0"
@@ -313,9 +412,10 @@ const CreateFloorPlanPage = () => {
           </div>
           <Form
             layout="vertical"
+            form={floorPlanForm}
             onFinish={onFinish}
             onFinishFailed={onFinishFailed}
-            disabled={isLoading}
+            disabled={isSubmitting || !allowEdit}
           >
             <Form.Item>
               <Upload {...props}>
@@ -349,8 +449,8 @@ const CreateFloorPlanPage = () => {
               />
             </Form.Item>
             <Form.Item className="mt-10">
-              <Button type="primary" htmlType="submit" loading={isLoading}>
-                Submit
+              <Button type="primary" htmlType="submit" loading={isSubmitting}>
+                Save
               </Button>
             </Form.Item>
           </Form>
@@ -388,4 +488,4 @@ const CreateFloorPlanPage = () => {
   );
 };
 
-export default CreateFloorPlanPage;
+export default EditFloorPlanPage;

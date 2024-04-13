@@ -6,7 +6,7 @@ import { Alert, Button, Table, TableColumnsType } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { PAGE_ROUTES } from "@/config/constants";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
-import { getAllFloorData } from "@/services/floorPlan";
+import { getFloorPlanList } from "@/services/floorPlan";
 
 interface FloorDataType {
   key: number;
@@ -25,7 +25,11 @@ const columns: TableColumnsType<FloorDataType> = [
   {
     title: "Floor Name",
     dataIndex: "name",
-    render: (name: string) => <a>Lantai {name}</a>,
+    render: (_, record) => (
+      <a href={`${PAGE_ROUTES.floorPlanDetail}${record.key}`}>
+        Lantai {record.name}
+      </a>
+    ),
   },
   {
     title: "Action",
@@ -51,7 +55,7 @@ const FloorPlanListPage = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const response = await getAllFloorData();
+      const response = await getFloorPlanList();
       const formattedData = response?.data?.map((item: any) => {
         const { id, ...rest } = item;
         return { key: id, ...rest };
