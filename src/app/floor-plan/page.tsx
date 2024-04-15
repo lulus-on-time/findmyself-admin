@@ -26,7 +26,7 @@ const columns: TableColumnsType<FloorDataType> = [
     title: "Name",
     dataIndex: "name",
     render: (_, record) => (
-      <a href={`${PAGE_ROUTES.floorPlanDetail}${record.key}`}>
+      <a href={`${PAGE_ROUTES.floorPlanDetail}?floorId=${record.key}`}>
         Lantai {record.name}
       </a>
     ),
@@ -99,7 +99,12 @@ const FloorPlanListPage = () => {
             New Floor Plan
           </Button>
         </div>
-        <Table columns={columns} dataSource={floorData} bordered />
+        <Table
+          columns={columns}
+          dataSource={floorData}
+          bordered
+          pagination={false}
+        />
       </div>
     </CustomLayout>
   );

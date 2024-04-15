@@ -24,15 +24,17 @@ import {
 import type { UploadProps } from "antd";
 import { spaceLabelIcon } from "@/components/icons/marker";
 import { getFloorPlanDetail } from "@/services/floorPlan";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PAGE_ROUTES } from "@/config/constants";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import SpaceDetailModal from "@/components/modals/CreateSpaceModal";
 import FpTutorialModal from "@/components/modals/FpTutorialModal";
 import { LabelMarkers } from "../type";
 
-const EditFloorPlanPage = ({ params }: { params: { id: any } }) => {
-  const floorId = params.id;
+const EditFloorPlanPage = () => {
+  const searchParams = useSearchParams();
+  const floorId = searchParams.get("floorId");
+
   const router = useRouter();
   // useRef
   const mapDivRef = useRef<HTMLDivElement | null>(null);
