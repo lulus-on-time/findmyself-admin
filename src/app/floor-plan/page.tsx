@@ -16,14 +16,14 @@ interface FloorDataType {
 
 const columns: TableColumnsType<FloorDataType> = [
   {
-    title: "Level",
+    title: "Floor Level",
     dataIndex: "level",
     defaultSortOrder: "ascend",
     sorter: (a, b) => a.level - b.level,
     width: "20%",
   },
   {
-    title: "Floor Name",
+    title: "Name",
     dataIndex: "name",
     render: (_, record) => (
       <a href={`${PAGE_ROUTES.floorPlanDetail}${record.key}`}>
@@ -99,7 +99,7 @@ const FloorPlanListPage = () => {
             New Floor Plan
           </Button>
         </div>
-        <Table columns={columns} dataSource={floorData} />
+        <Table columns={columns} dataSource={floorData} bordered />
       </div>
     </CustomLayout>
   );
