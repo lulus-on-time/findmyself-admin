@@ -7,9 +7,9 @@ import { PAGE_ROUTES } from "@/config/constants";
 import { PlusOutlined } from "@ant-design/icons";
 import { Alert, Button, Modal, Select, Table, TableColumnsType } from "antd";
 import { AccessPointDataType } from "./type";
-import { dummyData } from "./dummy";
-import { getFloorPlanList } from "@/services/floorPlan";
+import { getAllFloorPlan } from "@/services/floorPlan";
 import { useRouter } from "next/navigation";
+import { getAllAccessPoint } from "@/services/accessPoint";
 
 const AccessPointListPage = () => {
   const router = useRouter();
@@ -48,10 +48,17 @@ const AccessPointListPage = () => {
             ? 0
             : record.floor.apTotal,
       }),
+      width: "20%",
     },
     {
       title: "AP Location",
       dataIndex: "locationName",
+      width: "25%",
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      render: (_, record) => (record.description ? record.description : "-"),
     },
     {
       title: "Total",
@@ -65,18 +72,31 @@ const AccessPointListPage = () => {
             ? 0
             : record.floor.apTotal,
       }),
+      width: "10%",
     },
   ];
 
-  // TODO
   useEffect(() => {
-    setAccessPointData(dummyData);
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getAllAccessPoint();
+      setAccessPointData(response.data);
+      setIsLoading(false);
+    } catch (error: any) {
+      setIsLoading(false);
+      setErrorStatus(true);
+      setErrorMessage(error.toString());
+    }
+  };
 
   const fetchFloorOptions = async () => {
     setOptionLoading(true);
     try {
-      const response = await getFloorPlanList();
+      const response = await getAllFloorPlan();
       const options = response?.data?.map((item: any) => {
         return {
           value: item.id,

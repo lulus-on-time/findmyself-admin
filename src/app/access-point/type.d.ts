@@ -9,6 +9,7 @@ export interface AccessPointDataType {
   key: number;
   floor: Floor;
   locationName: string;
+  description: string;
 }
 
 export interface ApDetailDataType {
