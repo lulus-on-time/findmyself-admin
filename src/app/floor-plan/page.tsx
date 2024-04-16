@@ -6,7 +6,7 @@ import { Alert, Button, Modal, Table, TableColumnsType } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { PAGE_ROUTES } from "@/config/constants";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
-import { getFloorPlanList } from "@/services/floorPlan";
+import { getAllFloorPlan } from "@/services/floorPlan";
 
 interface FloorDataType {
   key: number;
@@ -68,7 +68,7 @@ const FloorPlanListPage = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const response = await getFloorPlanList();
+      const response = await getAllFloorPlan();
       const formattedData = response?.data?.map((item: any) => {
         const { id, ...rest } = item;
         return { key: id, ...rest };

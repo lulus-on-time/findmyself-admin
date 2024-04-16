@@ -1,8 +1,8 @@
 import axios from "axios";
 import {
   API_CREATE_FLOOR_PLAN,
+  API_GET_ALL_FLOOR_PLAN,
   API_GET_FLOOR_PLAN_DETAIL,
-  API_GET_FLOOR_PLAN_LIST,
 } from "@/config/endpoint";
 
 const postCreateFloorPlan = async (dataToSend: any) => {
@@ -15,9 +15,9 @@ const postCreateFloorPlan = async (dataToSend: any) => {
   }
 };
 
-const getFloorPlanList = async () => {
+const getAllFloorPlan = async () => {
   try {
-    const response = await axios.get(API_GET_FLOOR_PLAN_LIST);
+    const response = await axios.get(API_GET_ALL_FLOOR_PLAN);
     return response;
   } catch (error) {
     console.error(error);
@@ -35,4 +35,4 @@ const getFloorPlanDetail = async (floorId: any) => {
   }
 };
 
-export { postCreateFloorPlan, getFloorPlanList, getFloorPlanDetail };
+export { postCreateFloorPlan, getAllFloorPlan, getFloorPlanDetail };
