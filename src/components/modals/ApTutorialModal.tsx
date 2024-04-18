@@ -3,7 +3,7 @@
 import React from "react";
 import { Modal } from "antd";
 
-const FpTutorialModal = ({ open, onOk, onCancel, ...props }: any) => {
+const ApTutorialModal = ({ open, onOk, onCancel, ...props }: any) => {
   return (
     <Modal title="Tutorial" open={open} onOk={onOk} onCancel={onCancel}>
       <p>Some contents...</p>
@@ -13,4 +13,4 @@ const FpTutorialModal = ({ open, onOk, onCancel, ...props }: any) => {
   );
 };
 
-export default FpTutorialModal;
+export default ApTutorialModal;

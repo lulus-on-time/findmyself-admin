@@ -101,11 +101,6 @@ const FloorPlanListPage = () => {
             showIcon
             message="Error fetching data"
             description={errorMessage}
-            closable
-            onClose={() => {
-              setErrorStatus(false);
-              setErrorMessage("");
-            }}
           />
         )}
         <div className="flex flex-col md:flex-row gap-5 justify-between md:items-center">

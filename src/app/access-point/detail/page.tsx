@@ -44,6 +44,19 @@ const AccessPointDetailPage = () => {
       }),
     },
     {
+      title: "Description",
+      dataIndex: "description",
+      render: (_, record) => record.apInfo.description,
+      onCell: (record, index) => ({
+        rowSpan:
+          index &&
+          index !== 0 &&
+          record.apInfo.id === apDetailData[index - 1].apInfo.id
+            ? 0
+            : record.apInfo.bssidTotal,
+      }),
+    },
+    {
       title: "SSID",
       dataIndex: "ssid",
     },
@@ -79,11 +92,6 @@ const AccessPointDetailPage = () => {
             showIcon
             message="Error fetching data"
             description={errorMessage}
-            closable
-            onClose={() => {
-              setErrorStatus(false);
-              setErrorMessage("");
-            }}
           />
         )}
         <div className="flex flex-col md:flex-row gap-5 justify-between md:items-center">

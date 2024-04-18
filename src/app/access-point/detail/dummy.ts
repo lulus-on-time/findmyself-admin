@@ -6,6 +6,7 @@ export const dummyData: ApDetailDataType[] = [
     apInfo: {
       id: 1,
       locationName: "Auditorium",
+      description: "-",
       bssidTotal: 1,
     },
     ssid: "Hotspot - UI",
@@ -16,6 +17,7 @@ export const dummyData: ApDetailDataType[] = [
     apInfo: {
       id: 2,
       locationName: "A3.01",
+      description: "Depan meja dosen",
       bssidTotal: 2,
     },
     ssid: "Hotspot - UI",
@@ -26,6 +28,7 @@ export const dummyData: ApDetailDataType[] = [
     apInfo: {
       id: 2,
       locationName: "A3.01",
+      description: "Depan meja dosen",
       bssidTotal: 2,
     },
     ssid: "Hotspot - UI",
@@ -35,7 +38,8 @@ export const dummyData: ApDetailDataType[] = [
     key: 4,
     apInfo: {
       id: 3,
-      locationName: "Koridor",
+      locationName: "A3.01",
+      description: "Depan pintu",
       bssidTotal: 1,
     },
     ssid: "Hotspot - UI",

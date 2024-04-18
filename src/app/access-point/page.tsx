@@ -14,7 +14,7 @@ import { getAllAccessPoint } from "@/services/accessPoint";
 const AccessPointListPage = () => {
   const router = useRouter();
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [accessPointData, setAccessPointData] = useState<any>(null);
   const [errorStatus, setErrorStatus] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -58,7 +58,7 @@ const AccessPointListPage = () => {
     {
       title: "Description",
       dataIndex: "description",
-      render: (_, record) => (record.description ? record.description : "-"),
+      render: (_, record) => record.description,
     },
     {
       title: "Total",
@@ -147,11 +147,6 @@ const AccessPointListPage = () => {
             showIcon
             message="Error fetching data"
             description={errorMessage}
-            closable
-            onClose={() => {
-              setErrorStatus(false);
-              setErrorMessage("");
-            }}
           />
         )}
         <div className="flex flex-col md:flex-row gap-5 justify-between md:items-center">

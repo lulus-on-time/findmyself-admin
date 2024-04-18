@@ -12,6 +12,7 @@ import {
   UploadOutlined,
 } from "@ant-design/icons";
 import {
+  Alert,
   Button,
   Form,
   Input,
@@ -27,7 +28,7 @@ import { getFloorPlanDetail } from "@/services/floorPlan";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PAGE_ROUTES } from "@/config/constants";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
-import SpaceDetailModal from "@/components/modals/CreateSpaceModal";
+import SpaceDetailModal from "@/components/modals/SpaceDetailModal";
 import FpTutorialModal from "@/components/modals/FpTutorialModal";
 import { LabelMarkers } from "../type";
 
@@ -378,29 +379,41 @@ const EditFloorPlanPage = () => {
   return (
     <CustomLayout>
       <div className="w-full flex flex-col md:flex-row">
-        <div
-          id="map"
-          style={{
-            position: "sticky",
-            height: "88vh",
-            background: "#F5F5F5",
-          }}
-          ref={mapDivRef}
-          className="w-full md:w-3/4"
-        />
+        <div className="w-full md:w-3/4">
+          {errorStatus && (
+            <Alert
+              message="Error fetching floor plan"
+              description={errorMessage}
+              type="error"
+              showIcon
+              className="rounded-none"
+            />
+          )}
+          <div
+            id="map"
+            style={{
+              position: "sticky",
+              height: "88vh",
+              background: "#F5F5F5",
+            }}
+            ref={mapDivRef}
+          />
+        </div>
         <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
           <div className="flex justify-between items-center gap-5">
             <div className="flex items-center gap-3">
-              <Switch
-                onChange={(checked: boolean) => {
-                  setAllowEdit(checked);
-                  if (checked) {
-                    mapLRef.current?.addControl(drawControlRef.current);
-                  } else {
-                    mapLRef.current?.removeControl(drawControlRef.current);
-                  }
-                }}
-              />
+              {!errorStatus && (
+                <Switch
+                  onChange={(checked: boolean) => {
+                    setAllowEdit(checked);
+                    if (checked) {
+                      mapLRef.current?.addControl(drawControlRef.current);
+                    } else {
+                      mapLRef.current?.removeControl(drawControlRef.current);
+                    }
+                  }}
+                />
+              )}
               <h3>Edit Floor Plan</h3>
             </div>
             <Button
@@ -417,7 +430,7 @@ const EditFloorPlanPage = () => {
             form={floorPlanForm}
             onFinish={onFinish}
             onFinishFailed={onFinishFailed}
-            disabled={isSubmitting || !allowEdit}
+            disabled={isSubmitting || !allowEdit || errorStatus}
           >
             <Form.Item>
               <Upload {...props}>
@@ -425,14 +438,12 @@ const EditFloorPlanPage = () => {
               </Upload>
             </Form.Item>
             <Form.Item
-              label={
-                <div className="flex gap-2 items-center">
-                  <span>Floor Level</span>
-                  <Tooltip title="Numerical position of floor within the building. It determines the sorting order of the floors.">
-                    <InfoCircleOutlined style={{ color: "#a6a6a6" }} />
-                  </Tooltip>
-                </div>
-              }
+              label="Floor Level"
+              tooltip={{
+                title:
+                  "Numerical position of floor within the building. It determines the sorting order of the floors.",
+                icon: <InfoCircleOutlined />,
+              }}
               name="floorLevel"
               rules={[{ required: true, message: "Please enter Floor Level" }]}
             >
