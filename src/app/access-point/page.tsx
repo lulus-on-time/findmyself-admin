@@ -126,14 +126,6 @@ const AccessPointListPage = () => {
     setFloorModalOpen(false);
   };
 
-  const handleOk = () => {
-    if (selectedFloorId) {
-      router.push(`${PAGE_ROUTES.editAccessPoint}?floorId=${selectedFloorId}`);
-    } else {
-      setOptionErrorMsg("Please select an option");
-    }
-  };
-
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -171,7 +163,19 @@ const AccessPointListPage = () => {
         title="Choose Floor"
         open={floorModalOpen}
         onCancel={cancelChooseFloor}
-        onOk={handleOk}
+        footer={[
+          <Button key={"cancel"} onClick={cancelChooseFloor}>
+            Cancel
+          </Button>,
+          <Button
+            key={"ok"}
+            type="primary"
+            href={`${PAGE_ROUTES.editAccessPoint}?floorId=${selectedFloorId}`}
+            disabled={selectedFloorId ? false : true}
+          >
+            Ok
+          </Button>,
+        ]}
       >
         {optionErrorMsg && (
           <Alert
@@ -190,11 +194,6 @@ const AccessPointListPage = () => {
           filterSort={(a, b) => a.level - b.level}
           onChange={(value) => setSelectedFloorId(value)}
         />
-        {/* <Button
-          href={`${PAGE_ROUTES.editAccessPoint}?floorId=${selectedFloorId}`}
-        >
-          Go
-        </Button> */}
       </Modal>
     </CustomLayout>
   );

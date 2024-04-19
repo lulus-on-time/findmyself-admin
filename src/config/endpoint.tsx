@@ -5,7 +5,7 @@ const BASE_URL = "http://localhost:8080";
 // FLOOR PLAN
 const CREATE_FLOOR_PLAN = "/floors/create";
 const GET_ALL_FLOOR_PLAN = "/floors/short";
-const GET_FLOOR_PLAN_DETAIL = "/floors?floorId=";
+const GET_FLOOR_PLAN_DETAIL = "/floors/";
 
 // ACCESS POINT
 const GET_ALL_ACCESS_POINT = "/aps";
