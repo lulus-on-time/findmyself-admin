@@ -31,6 +31,7 @@ import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import SpaceDetailModal from "@/components/modals/SpaceDetailModal";
 import FpTutorialModal from "@/components/modals/FpTutorialModal";
 import { LabelMarkers } from "../type";
+import ConfirmationModal from "@/components/modals/ConfirmationModal";
 
 const EditFloorPlanPage = () => {
   const searchParams = useSearchParams();
@@ -43,16 +44,15 @@ const EditFloorPlanPage = () => {
   const overlayRef = useRef<L.ImageOverlay | null>(null);
   const editableLayers = useRef<L.FeatureGroup | null>(null);
   const globalLayer = useRef<L.Polygon | null>(null);
-  const drawControlRef = useRef<any>(null);
   //
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
   const [categoryValue] = useState("room");
   const [labelMarkersDict] = useState<LabelMarkers>({});
-  const [allowEdit, setAllowEdit] = useState<boolean>(false);
   // Modal
   const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
   const [createSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
   const [editSpaceModalOpen, setEditSpaceModalOpen] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
   // Form
   const [createSpaceForm] = Form.useForm();
   const [editSpaceForm] = Form.useForm();
@@ -62,8 +62,9 @@ const EditFloorPlanPage = () => {
   const [errorStatus, setErrorStatus] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
+  // Data
   var floorPlanData: any = null;
+  const [formValues, setFormValues] = useState<any>(null);
 
   useEffect(() => {
     fetchData();
@@ -168,7 +169,7 @@ const EditFloorPlanPage = () => {
           edit: false,
         },
       });
-      drawControlRef.current = drawControl;
+      map.addControl(drawControl);
 
       map.on("draw:created", function (e) {
         const layer = (e as L.DrawEvents.Created).layer;
@@ -329,7 +330,12 @@ const EditFloorPlanPage = () => {
     editSpaceForm.resetFields();
   };
 
-  const onFinish = async (values: any) => {
+  const onFinish = (values: any) => {
+    setSaveModalOpen(true);
+    setFormValues(values);
+  };
+
+  const submitData = async (values: any) => {
     setIsSubmitting(true);
     const dataToSend = Object.assign(
       {},
@@ -400,37 +406,28 @@ const EditFloorPlanPage = () => {
           />
         </div>
         <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
-          <div className="flex justify-between items-center gap-5">
-            <div className="flex items-center gap-3">
-              {!errorStatus && (
-                <Switch
-                  onChange={(checked: boolean) => {
-                    setAllowEdit(checked);
-                    if (checked) {
-                      mapLRef.current?.addControl(drawControlRef.current);
-                    } else {
-                      mapLRef.current?.removeControl(drawControlRef.current);
-                    }
-                  }}
-                />
-              )}
-              <h3>Edit Floor Plan</h3>
+          <div className="flex flex-col">
+            <div className="flex justify-between items-center gap-5">
+              <div className="flex items-center gap-3">
+                <h3>Floor Plan</h3>
+              </div>
+              <Button
+                type="link"
+                className="flex items-center p-0"
+                onClick={() => setTutorialModalOpen(true)}
+              >
+                <span>Tutorial</span>
+                <QuestionCircleOutlined />
+              </Button>
             </div>
-            <Button
-              type="link"
-              className="flex items-center p-0"
-              onClick={() => setTutorialModalOpen(true)}
-            >
-              <span>Tutorial</span>
-              <QuestionCircleOutlined />
-            </Button>
+            <span>{`Changes won't be saved until the save button is clicked.`}</span>
           </div>
           <Form
             layout="vertical"
             form={floorPlanForm}
             onFinish={onFinish}
             onFinishFailed={onFinishFailed}
-            disabled={isSubmitting || !allowEdit || errorStatus}
+            disabled={isSubmitting || errorStatus}
           >
             <Form.Item>
               <Upload {...props}>
@@ -497,6 +494,20 @@ const EditFloorPlanPage = () => {
         onOk={() => setTutorialModalOpen(false)}
         onCancel={() => setTutorialModalOpen(false)}
       />
+
+      <ConfirmationModal
+        title="Save Changes"
+        open={saveModalOpen}
+        onCancel={() => {
+          setSaveModalOpen(false);
+          setFormValues(null);
+        }}
+        okText="Save"
+        onOk={() => submitData(formValues)}
+        isSubmitting={isSubmitting}
+      >
+        Are you sure you want to save these changes?
+      </ConfirmationModal>
     </CustomLayout>
   );
 };

@@ -7,6 +7,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import { PAGE_ROUTES } from "@/config/constants";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import { getAllFloorPlan } from "@/services/floorPlan";
+import ConfirmationModal from "@/components/modals/ConfirmationModal";
 
 interface FloorDataType {
   key: number;
@@ -121,21 +122,15 @@ const FloorPlanListPage = () => {
         />
       </div>
 
-      <Modal
+      <ConfirmationModal
         title={`Delete Floor Plan: Lantai ${floorNameToDelete}`}
         open={deleteModalOpen}
         onCancel={handleCancel}
-        footer={[
-          <Button key={"cancel"} onClick={handleCancel}>
-            Cancel
-          </Button>,
-          <Button key={"delete"} type="primary" danger>
-            Delete
-          </Button>,
-        ]}
+        okText="Delete"
+        onOk={null}
       >
         Are you sure you want to delete this floor plan?
-      </Modal>
+      </ConfirmationModal>
     </CustomLayout>
   );
 };

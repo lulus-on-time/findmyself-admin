@@ -190,6 +190,11 @@ const AccessPointListPage = () => {
           filterSort={(a, b) => a.level - b.level}
           onChange={(value) => setSelectedFloorId(value)}
         />
+        {/* <Button
+          href={`${PAGE_ROUTES.editAccessPoint}?floorId=${selectedFloorId}`}
+        >
+          Go
+        </Button> */}
       </Modal>
     </CustomLayout>
   );

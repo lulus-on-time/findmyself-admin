@@ -12,6 +12,7 @@ const ApDetailModal = ({
   onFinish,
   onFinishFailed,
   onDelete,
+  initialValues,
 }: any) => {
   return (
     <Modal title={title} open={open} onCancel={onCancel} footer={[]}>
@@ -21,8 +22,11 @@ const ApDetailModal = ({
         form={form}
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
-        initialValues={{ bssids: [""] }}
+        initialValues={initialValues}
       >
+        <Form.Item label="Location" name="location" required>
+          <Input disabled />
+        </Form.Item>
         <Form.Item label="AP Description (optional)" name="description">
           <Input placeholder="Sebelah kanan pintu" />
         </Form.Item>

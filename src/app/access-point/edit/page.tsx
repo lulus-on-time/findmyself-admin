@@ -15,6 +15,7 @@ import { PAGE_ROUTES } from "@/config/constants";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import ApTutorialModal from "@/components/modals/ApTutorialModal";
 import ApDetailModal from "@/components/modals/ApDetailModal";
+import ConfirmationModal from "@/components/modals/ConfirmationModal";
 
 const EditAccessPointPage = () => {
   const searchParams = useSearchParams();
@@ -29,6 +30,7 @@ const EditAccessPointPage = () => {
   const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
   const [createApModalOpen, setCreateApModalOpen] = useState(false);
   const [editApModalOpen, setEditApModalOpen] = useState(false);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
   // Form
   const [createApForm] = Form.useForm();
   const [editApForm] = Form.useForm();
@@ -109,6 +111,10 @@ const EditAccessPointPage = () => {
           editableLayers.current!.addLayer(apMarker);
           globalAp.current = apMarker;
 
+          createApForm.setFieldValue(
+            "location",
+            spaceDict[feature.properties.id],
+          );
           setCreateApModalOpen(true);
         }
 
@@ -141,6 +147,7 @@ const EditAccessPointPage = () => {
       mapLRef.current!.doubleClickZoom.disable();
       globalAp.current = apMarker;
       editApForm.setFieldsValue({
+        location: `${spaceDict[apMarker!.feature!.properties.spaceId]}`,
         description: apMarker!.feature!.properties.description,
         bssids: apMarker!.feature!.properties.bssids,
       });
@@ -219,18 +226,22 @@ const EditAccessPointPage = () => {
           />
         </div>
         <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
-          <div className="flex justify-between items-center gap-5">
-            <div className="flex items-center gap-3">
-              <h3>Access Point Map</h3>
+          <div className="flex flex-col">
+            <div className="flex justify-between items-center gap-5">
+              <div className="flex items-center gap-3">
+                <h3>Access Point Map</h3>
+              </div>
+              <Button
+                type="link"
+                className="flex items-center p-0"
+                onClick={() => setTutorialModalOpen(true)}
+              >
+                <span>Tutorial</span>
+                <QuestionCircleOutlined />
+              </Button>
             </div>
-            <Button
-              type="link"
-              className="flex items-center p-0"
-              onClick={() => setTutorialModalOpen(true)}
-            >
-              <span>Tutorial</span>
-              <QuestionCircleOutlined />
-            </Button>
+
+            <span>{`Changes won't be saved until the save button is clicked.`}</span>
           </div>
 
           {apData &&
@@ -262,11 +273,12 @@ const EditAccessPointPage = () => {
           <Button
             type="primary"
             className="w-fit"
-            onClick={() =>
+            onClick={() => {
+              setSaveModalOpen(true);
               console.log(
                 JSON.stringify(editableLayers.current?.toGeoJSON(), null, 2),
-              )
-            }
+              );
+            }}
           >
             Save
           </Button>
@@ -286,6 +298,7 @@ const EditAccessPointPage = () => {
         onCancel={cancelCreateAp}
         onFinish={createAp}
         onFinishFailed={onFinishFailed}
+        initialValues={{ bssids: [""] }}
       />
 
       <ApDetailModal
@@ -297,6 +310,16 @@ const EditAccessPointPage = () => {
         onFinishFailed={onFinishFailed}
         onDelete={deleteAp}
       />
+
+      <ConfirmationModal
+        title="Save Changes"
+        open={saveModalOpen}
+        onCancel={() => setSaveModalOpen(false)}
+        okText="Save"
+        onOk={null}
+      >
+        Are you sure you want to save these changes?
+      </ConfirmationModal>
     </CustomLayout>
   );
 };
