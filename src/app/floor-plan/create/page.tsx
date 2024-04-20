@@ -29,7 +29,7 @@ import { useRouter } from "next/navigation";
 import { PAGE_ROUTES } from "@/config/constants";
 import { LabelMarkers } from "../type";
 import FpTutorialModal from "@/components/modals/FpTutorialModal";
-import SpaceDetailModal from "@/components/modals/CreateSpaceModal";
+import SpaceDetailModal from "@/components/modals/SpaceDetailModal";
 
 const CreateFloorPlanPage = () => {
   const router = useRouter();
@@ -206,11 +206,11 @@ const CreateFloorPlanPage = () => {
     labelMarker.on("dblclick", function () {
       globalLayer.current = layer;
       setEditSpaceModalOpen(true);
-      editSpaceForm.setFieldValue(
-        "category",
-        layer!.feature!.properties.category,
-      );
-      editSpaceForm.setFieldValue("spaceName", layer!.feature!.properties.name);
+
+      editSpaceForm.setFieldsValue({
+        category: layer!.feature!.properties.category,
+        spaceName: layer!.feature!.properties.name,
+      });
     });
 
     setCreateSpaceModalOpen(false);
@@ -256,7 +256,6 @@ const CreateFloorPlanPage = () => {
       },
       editableLayers.current?.toGeoJSON(),
     );
-    // console.log(JSON.stringify(dataToSend, null, 2));
 
     try {
       const response = await postCreateFloorPlan(dataToSend);
@@ -323,14 +322,12 @@ const CreateFloorPlanPage = () => {
               </Upload>
             </Form.Item>
             <Form.Item
-              label={
-                <div className="flex gap-2 items-center">
-                  <span>Floor Level</span>
-                  <Tooltip title="Numerical position of floor within the building. It determines the sorting order of the floors.">
-                    <InfoCircleOutlined style={{ color: "#a6a6a6" }} />
-                  </Tooltip>
-                </div>
-              }
+              label="Floor Level"
+              tooltip={{
+                title:
+                  "Numerical position of floor within the building. It determines the sorting order of the floors.",
+                icon: <InfoCircleOutlined />,
+              }}
               name="floorLevel"
               rules={[{ required: true, message: "Please enter Floor Level" }]}
             >

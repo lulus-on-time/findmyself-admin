@@ -2,11 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import CustomLayout from "@/components/layout/CustomLayout";
-import { Alert, Button, Modal, Table, TableColumnsType } from "antd";
+import { Alert, Button, Table, TableColumnsType, notification } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { PAGE_ROUTES } from "@/config/constants";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
-import { getAllFloorPlan } from "@/services/floorPlan";
+import { deleteFloorPlan, getAllFloorPlan } from "@/services/floorPlan";
+import ConfirmationModal from "@/components/modals/ConfirmationModal";
 
 interface FloorDataType {
   key: number;
@@ -19,8 +20,10 @@ const FloorPlanListPage = () => {
   const [floorData, setFloorData] = useState<any>(null);
   const [errorStatus, setErrorStatus] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const [floorIdToDelete, setFloorIdToDelete] = useState<number>(-1);
-  const [floorNameToDelete, setFloorNameToDelete] = useState<string>("");
+  const [floorToDelete, setFloorToDelete] = useState<FloorDataType | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   // Modal
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
 
@@ -49,8 +52,7 @@ const FloorPlanListPage = () => {
           danger
           className="p-0"
           onClick={() => {
-            setFloorIdToDelete(record.key);
-            setFloorNameToDelete(record.name);
+            setFloorToDelete(record);
             setDeleteModalOpen(true);
           }}
         >
@@ -83,9 +85,43 @@ const FloorPlanListPage = () => {
   };
 
   const handleCancel = () => {
-    setFloorIdToDelete(-1);
-    setFloorNameToDelete("");
+    setFloorToDelete(null);
     setDeleteModalOpen(false);
+  };
+
+  const deleteFloor = async (floorId: any) => {
+    setIsDeleting(true);
+    try {
+      const response = await deleteFloorPlan(floorId);
+      if (response.status === 200) {
+        setFloorToDelete(null);
+        setIsDeleting(false);
+        setDeleteModalOpen(false);
+        notification.open({
+          type: "success",
+          duration: 8,
+          message: "Deletion successful",
+          description: `Lantai ${floorToDelete?.name} has been successfully deleted. All access points on this floor have also been removed.`,
+        });
+        fetchData();
+      }
+    } catch (error: any) {
+      setIsDeleting(false);
+      if (error.response?.data?.error?.message) {
+        notification.open({
+          type: "error",
+          message: "Error deleting floor plan",
+          description: error.response.data.error.message,
+        });
+      } else {
+        console.error(error);
+        notification.open({
+          type: "error",
+          message: "Error deleting floor plan",
+          description: "An unexpected error occurred.",
+        });
+      }
+    }
   };
 
   if (isLoading) {
@@ -101,11 +137,6 @@ const FloorPlanListPage = () => {
             showIcon
             message="Error fetching data"
             description={errorMessage}
-            closable
-            onClose={() => {
-              setErrorStatus(false);
-              setErrorMessage("");
-            }}
           />
         )}
         <div className="flex flex-col md:flex-row gap-5 justify-between md:items-center">
@@ -126,21 +157,24 @@ const FloorPlanListPage = () => {
         />
       </div>
 
-      <Modal
-        title={`Delete Floor Plan: Lantai ${floorNameToDelete}`}
+      <ConfirmationModal
+        title={`Delete Floor Plan: Lantai ${floorToDelete?.name}`}
         open={deleteModalOpen}
         onCancel={handleCancel}
-        footer={[
-          <Button key={"cancel"} onClick={handleCancel}>
-            Cancel
-          </Button>,
-          <Button key={"delete"} type="primary" danger>
-            Delete
-          </Button>,
-        ]}
+        okText="Delete"
+        onOk={() => deleteFloor(floorToDelete?.key)}
+        isSubmitting={isDeleting}
       >
-        Are you sure you want to delete this floor plan?
-      </Modal>
+        <div className="w-full flex flex-col gap-5 my-5">
+          <span>Are you sure you want to delete this floor plan?</span>
+          <Alert
+            type="warning"
+            showIcon
+            message="Warning"
+            description="Deleting this item will also remove all access points on this floor. This action cannot be undone."
+          />
+        </div>
+      </ConfirmationModal>
     </CustomLayout>
   );
 };

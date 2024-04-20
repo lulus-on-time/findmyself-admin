@@ -14,7 +14,7 @@ import { getAllAccessPoint } from "@/services/accessPoint";
 const AccessPointListPage = () => {
   const router = useRouter();
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [accessPointData, setAccessPointData] = useState<any>(null);
   const [errorStatus, setErrorStatus] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -58,7 +58,7 @@ const AccessPointListPage = () => {
     {
       title: "Description",
       dataIndex: "description",
-      render: (_, record) => (record.description ? record.description : "-"),
+      render: (_, record) => record.description,
     },
     {
       title: "Total",
@@ -126,14 +126,6 @@ const AccessPointListPage = () => {
     setFloorModalOpen(false);
   };
 
-  const handleOk = () => {
-    if (selectedFloorId) {
-      router.push(`${PAGE_ROUTES.editAccessPoint}?floorId=${selectedFloorId}`);
-    } else {
-      setOptionErrorMsg("Please select an option");
-    }
-  };
-
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -147,11 +139,6 @@ const AccessPointListPage = () => {
             showIcon
             message="Error fetching data"
             description={errorMessage}
-            closable
-            onClose={() => {
-              setErrorStatus(false);
-              setErrorMessage("");
-            }}
           />
         )}
         <div className="flex flex-col md:flex-row gap-5 justify-between md:items-center">
@@ -176,7 +163,19 @@ const AccessPointListPage = () => {
         title="Choose Floor"
         open={floorModalOpen}
         onCancel={cancelChooseFloor}
-        onOk={handleOk}
+        footer={[
+          <Button key={"cancel"} onClick={cancelChooseFloor}>
+            Cancel
+          </Button>,
+          <Button
+            key={"ok"}
+            type="primary"
+            href={`${PAGE_ROUTES.editAccessPoint}?floorId=${selectedFloorId}`}
+            disabled={selectedFloorId ? false : true}
+          >
+            Ok
+          </Button>,
+        ]}
       >
         {optionErrorMsg && (
           <Alert

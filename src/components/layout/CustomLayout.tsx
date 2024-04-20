@@ -3,6 +3,8 @@
 import React from "react";
 import theme from "@/theme/themeConfig";
 import { ConfigProvider, Layout, Menu } from "antd";
+import { PAGE_ROUTES } from "@/config/constants";
+import { usePathname } from "next/navigation";
 
 interface Props {
   children?: any;
@@ -10,12 +12,33 @@ interface Props {
 
 const { Header, Content } = Layout;
 
-const items = new Array(3).fill(null).map((_, index) => ({
-  key: index + 1,
-  label: `nav ${index + 1}`,
-}));
+const menu = [
+  {
+    label: "Floor Plan",
+    url: `${PAGE_ROUTES.floorPlanList}`,
+  },
+  {
+    label: "Access Point",
+    url: `${PAGE_ROUTES.accessPointList}`,
+  },
+];
+
+const menuItems = menu.map((item, index) => {
+  const { label, url } = item;
+  return {
+    key: url,
+    label: (
+      <a key={index} href={url}>
+        {label}
+      </a>
+    ),
+    url: url,
+  };
+});
 
 const CustomLayout = ({ children, ...props }: Props) => {
+  const pathname = usePathname();
+
   return (
     <ConfigProvider theme={theme}>
       <Layout className="min-h-screen">
@@ -26,8 +49,8 @@ const CustomLayout = ({ children, ...props }: Props) => {
           <Menu
             theme="dark"
             mode="horizontal"
-            defaultSelectedKeys={["2"]}
-            items={items}
+            selectedKeys={[`/${pathname.split("/")[1]}`]}
+            items={menuItems}
             style={{ flex: 1, minWidth: 0, maxHeight: "100%" }}
           />
         </Header>

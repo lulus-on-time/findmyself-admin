@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Form, Input, Modal, Radio } from "antd";
 import React from "react";
+import { Button, Form, Input, Modal, Radio } from "antd";
 
 const SpaceDetailModal = ({
   title,

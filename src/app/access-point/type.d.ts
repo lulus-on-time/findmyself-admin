@@ -17,6 +17,7 @@ export interface ApDetailDataType {
   apInfo: {
     id: number;
     locationName: string;
+    description: string;
     bssidTotal: number;
   };
   ssid: string;
