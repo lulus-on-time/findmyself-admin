@@ -35,11 +35,7 @@ const AccessPointListPage = () => {
     {
       title: "Floor",
       dataIndex: "floorName",
-      render: (_, record) => (
-        <a href={`${PAGE_ROUTES.accessPointDetail}?floorId=${record.floor.id}`}>
-          Lantai {record.floor.name}
-        </a>
-      ),
+      render: (_, record) => <span>Lantai {record.floor.name}</span>,
       onCell: (record, index) => ({
         rowSpan:
           index &&
@@ -53,7 +49,7 @@ const AccessPointListPage = () => {
     {
       title: "AP Location",
       dataIndex: "locationName",
-      width: "25%",
+      width: "20%",
     },
     {
       title: "Description",
@@ -64,6 +60,24 @@ const AccessPointListPage = () => {
       title: "Total",
       dataIndex: "apTotal",
       render: (_, record) => record.floor.apTotal,
+      onCell: (record, index) => ({
+        rowSpan:
+          index &&
+          index !== 0 &&
+          record.floor.id === accessPointData[index - 1].floor.id
+            ? 0
+            : record.floor.apTotal,
+      }),
+      width: "10%",
+    },
+    {
+      title: "Action",
+      dataIndex: "action",
+      render: (_, record) => (
+        <a href={`${PAGE_ROUTES.accessPointDetail}?floorId=${record.floor.id}`}>
+          Lihat BSSID
+        </a>
+      ),
       onCell: (record, index) => ({
         rowSpan:
           index &&
@@ -89,7 +103,11 @@ const AccessPointListPage = () => {
     } catch (error: any) {
       setIsLoading(false);
       setErrorStatus(true);
-      setErrorMessage(error.toString());
+      if (error.response?.data?.error?.message) {
+        setErrorMessage(error.response.data.error.message);
+      } else {
+        setErrorMessage(error.toString());
+      }
     }
   };
 

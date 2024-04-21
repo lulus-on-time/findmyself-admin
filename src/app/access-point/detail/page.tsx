@@ -5,23 +5,19 @@ import { useSearchParams } from "next/navigation";
 import CustomLayout from "@/components/layout/CustomLayout";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import { PAGE_ROUTES } from "@/config/constants";
-import { AppstoreOutlined } from "@ant-design/icons";
 import { Alert, Button, Table, TableColumnsType } from "antd";
-import { dummyData } from "./dummy";
 import { ApDetailDataType } from "../type";
+import { getAccessPointDetail } from "@/services/accessPoint";
 
 const AccessPointDetailPage = () => {
   const searchParams = useSearchParams();
   const floorId = searchParams.get("floorId");
 
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [floorName, setFloorName] = useState<string>("");
   const [apDetailData, setApDetailData] = useState<any>(null);
   const [errorStatus, setErrorStatus] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
-
-  useEffect(() => {
-    setApDetailData(dummyData);
-  }, []);
 
   const columns: TableColumnsType<ApDetailDataType> = [
     {
@@ -42,6 +38,7 @@ const AccessPointDetailPage = () => {
             ? 0
             : record.apInfo.bssidTotal,
       }),
+      width: "15%",
     },
     {
       title: "Description",
@@ -55,14 +52,17 @@ const AccessPointDetailPage = () => {
             ? 0
             : record.apInfo.bssidTotal,
       }),
+      width: "25%",
     },
     {
       title: "SSID",
       dataIndex: "ssid",
+      width: "15%",
     },
     {
       title: "BSSID",
       dataIndex: "bssid",
+      width: "25%",
     },
     {
       title: "Total BSSID",
@@ -76,8 +76,31 @@ const AccessPointDetailPage = () => {
             ? 0
             : record.apInfo.bssidTotal,
       }),
+      width: "10%",
     },
   ];
+
+  useEffect(() => {
+    fetchData(floorId);
+  }, []);
+
+  const fetchData = async (floorId: any) => {
+    setIsLoading(true);
+    try {
+      const response = await getAccessPointDetail(floorId);
+      setFloorName(response.data.floorName);
+      setApDetailData(response.data.bssids);
+      setIsLoading(false);
+    } catch (error: any) {
+      setIsLoading(false);
+      setErrorStatus(true);
+      if (error.response?.data?.error?.message) {
+        setErrorMessage(error.response.data.error.message);
+      } else {
+        setErrorMessage(error.toString());
+      }
+    }
+  };
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -95,9 +118,12 @@ const AccessPointDetailPage = () => {
           />
         )}
         <div className="flex flex-col md:flex-row gap-5 justify-between md:items-center">
-          <h2 className="m-0">Access Point Detail - Lantai {floorId}</h2>
-          <Button type="primary" icon={<AppstoreOutlined />} href={""}>
-            See Floor Plan
+          <h2 className="m-0">Access Point Detail - Lantai {floorName}</h2>
+          <Button
+            type="primary"
+            href={`${PAGE_ROUTES.editAccessPoint}?floorId=${floorId}`}
+          >
+            View/Edit AP on Floor Plan
           </Button>
         </div>
         <Table
