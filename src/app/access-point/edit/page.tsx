@@ -16,6 +16,7 @@ import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import ApTutorialModal from "@/components/modals/ApTutorialModal";
 import ApDetailModal from "@/components/modals/ApDetailModal";
 import ConfirmationModal from "@/components/modals/ConfirmationModal";
+import { getAccessPointGeoJSON } from "@/services/accessPoint";
 
 const EditAccessPointPage = () => {
   const searchParams = useSearchParams();
@@ -41,29 +42,49 @@ const EditAccessPointPage = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   // Data
   var floorPlanData: any = null;
+  var fetchedApData: any = null;
+  const [floorName, setFloorName] = useState<string>("");
   const [spaceDict] = useState<any>({});
   const [apData, setApData] = useState<any>([]);
 
   useEffect(() => {
-    fetchFloorPlan();
+    fetchFPandAP();
   }, []);
 
-  const fetchFloorPlan = async () => {
+  const fetchFPandAP = async () => {
     setIsFetching(true);
+
     try {
-      const response = await getFloorPlanDetail(floorId);
-      floorPlanData = response.data;
-      initMap();
-      setIsFetching(false);
+      const fpResponse = await getFloorPlanDetail(floorId);
+      floorPlanData = fpResponse.data;
     } catch (error: any) {
-      setIsFetching(false);
       setErrorStatus(true);
       if (error.response?.data?.error?.message) {
         setErrorMessage(error.response.data.error.message);
       } else {
         setErrorMessage(error.toString());
       }
+      setIsFetching(false);
+      return;
     }
+
+    try {
+      const apResponse = await getAccessPointGeoJSON(floorId);
+      fetchedApData = apResponse.data;
+      setFloorName(apResponse.data.floor.name);
+    } catch (error: any) {
+      setErrorStatus(true);
+      if (error.response?.data?.error?.message) {
+        setErrorMessage(error.response.data.error.message);
+      } else {
+        setErrorMessage(error.toString());
+      }
+      setIsFetching(false);
+      return;
+    }
+
+    initMap();
+    setIsFetching(false);
   };
 
   const initMap = () => {
@@ -136,6 +157,32 @@ const EditAccessPointPage = () => {
       L.geoJSON(floorPlanData.geojson, {
         onEachFeature: onEachFeature,
       }).addTo(map);
+
+      // @ts-ignore
+      function pointToLayer(_: any, latlng: any) {
+        const apMarker = L.marker(latlng, {
+          icon: accessPointIcon,
+        });
+        editableLayers.current?.addLayer(apMarker);
+
+        apMarker.on("click", function () {
+          mapLRef.current!.doubleClickZoom.disable();
+          globalAp.current = apMarker;
+          editApForm.setFieldsValue({
+            location: `${spaceDict[apMarker.feature!.properties.spaceId]}`,
+            description: apMarker.feature!.properties.description,
+            bssids: apMarker.feature!.properties.bssids,
+          });
+          setEditApModalOpen(true);
+        });
+
+        return apMarker;
+      }
+
+      L.geoJSON(fetchedApData.geojson, {
+        pointToLayer: pointToLayer,
+      });
+      setApData(Object(editableLayers.current!.toGeoJSON()).features);
 
       mapLRef.current = map;
     }
@@ -233,7 +280,7 @@ const EditAccessPointPage = () => {
           <div className="flex flex-col">
             <div className="flex justify-between items-center gap-5">
               <div className="flex items-center gap-3">
-                <h3>Access Point Map</h3>
+                <h3>Access Point Map - Lantai {floorName}</h3>
               </div>
               <Button
                 type="link"
@@ -245,7 +292,10 @@ const EditAccessPointPage = () => {
               </Button>
             </div>
 
-            <span>{`Changes won't be saved until the save button is clicked.`}</span>
+            <Alert
+              type="warning"
+              message={`Changes won't be saved until the save button is clicked.`}
+            />
           </div>
 
           {apData &&

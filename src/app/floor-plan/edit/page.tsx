@@ -424,7 +424,10 @@ const EditFloorPlanPage = () => {
                 <QuestionCircleOutlined />
               </Button>
             </div>
-            <span>{`Changes won't be saved until the save button is clicked.`}</span>
+            <Alert
+              type="warning"
+              message={`Changes won't be saved until the save button is clicked.`}
+            />
           </div>
           <Form
             layout="vertical"

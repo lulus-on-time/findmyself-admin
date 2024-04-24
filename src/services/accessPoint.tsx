@@ -1,6 +1,7 @@
 import axios from "axios";
 import {
   API_GET_ACCESS_POINT_DETAIL,
+  API_GET_ACCESS_POINT_GEOJSON,
   API_GET_ALL_ACCESS_POINT,
 } from "@/config/endpoint";
 
@@ -24,4 +25,14 @@ const getAccessPointDetail = async (floorId: any) => {
   }
 };
 
-export { getAllAccessPoint, getAccessPointDetail };
+const getAccessPointGeoJSON = async (floorId: any) => {
+  try {
+    const response = await axios.get(API_GET_ACCESS_POINT_GEOJSON(floorId));
+    return response;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export { getAllAccessPoint, getAccessPointDetail, getAccessPointGeoJSON };

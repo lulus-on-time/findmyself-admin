@@ -35,7 +35,11 @@ const AccessPointListPage = () => {
     {
       title: "Floor",
       dataIndex: "floorName",
-      render: (_, record) => <span>Lantai {record.floor.name}</span>,
+      render: (_, record) => (
+        <a href={`${PAGE_ROUTES.accessPointDetail}?floorId=${record.floor.id}`}>
+          Lantai {record.floor.name}
+        </a>
+      ),
       onCell: (record, index) => ({
         rowSpan:
           index &&
@@ -60,24 +64,6 @@ const AccessPointListPage = () => {
       title: "Total",
       dataIndex: "apTotal",
       render: (_, record) => record.floor.apTotal,
-      onCell: (record, index) => ({
-        rowSpan:
-          index &&
-          index !== 0 &&
-          record.floor.id === accessPointData[index - 1].floor.id
-            ? 0
-            : record.floor.apTotal,
-      }),
-      width: "10%",
-    },
-    {
-      title: "Action",
-      dataIndex: "action",
-      render: (_, record) => (
-        <a href={`${PAGE_ROUTES.accessPointDetail}?floorId=${record.floor.id}`}>
-          Lihat BSSID
-        </a>
-      ),
       onCell: (record, index) => ({
         rowSpan:
           index &&
