@@ -80,7 +80,11 @@ const FloorPlanListPage = () => {
     } catch (error: any) {
       setIsLoading(false);
       setErrorStatus(true);
-      setErrorMessage(error.toString());
+      if (error.response?.data?.error?.message) {
+        setErrorMessage(error.response.data.error.message);
+      } else {
+        setErrorMessage(error.toString());
+      }
     }
   };
 

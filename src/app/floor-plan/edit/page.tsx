@@ -78,9 +78,13 @@ const EditFloorPlanPage = () => {
       initMap();
       setIsFetching(false);
     } catch (error: any) {
-      setErrorStatus(true);
-      setErrorMessage(error.toString());
       setIsFetching(false);
+      setErrorStatus(true);
+      if (error.response?.data?.error?.message) {
+        setErrorMessage(error.response.data.error.message);
+      } else {
+        setErrorMessage(error.toString());
+      }
     }
   };
 

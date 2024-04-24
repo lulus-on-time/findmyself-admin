@@ -10,6 +10,7 @@ const DELETE_FLOOR_PLAN = "/floors/";
 
 // ACCESS POINT
 const GET_ALL_ACCESS_POINT = "/aps";
+const GET_ACCESS_POINT_DETAIL = "/aps/";
 
 // ========== API URL ===========
 
@@ -23,6 +24,8 @@ const API_DELETE_FLOOR_PLAN = (floorId: any) =>
 
 // ACCESS POINT
 const API_GET_ALL_ACCESS_POINT = `${BASE_URL}${GET_ALL_ACCESS_POINT}`;
+const API_GET_ACCESS_POINT_DETAIL = (floorId: any) =>
+  `${BASE_URL}${GET_ACCESS_POINT_DETAIL}${floorId}`;
 
 export {
   API_CREATE_FLOOR_PLAN,
@@ -30,4 +33,5 @@ export {
   API_GET_FLOOR_PLAN_DETAIL,
   API_GET_ALL_ACCESS_POINT,
   API_DELETE_FLOOR_PLAN,
+  API_GET_ACCESS_POINT_DETAIL,
 };
