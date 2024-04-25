@@ -14,6 +14,7 @@ const GET_ALL_ACCESS_POINT = "/aps";
 const GET_ACCESS_POINT_DETAIL = "/aps/";
 const GET_ACCESS_POINT_GEOJSON = (floorId: any) =>
   `/aps/${floorId}?type=geojson`;
+const EDIT_ACCESS_POINT = (floorId: any) => `/aps/${floorId}/edit`;
 
 // ========== API URL ===========
 
@@ -33,6 +34,8 @@ const API_GET_ACCESS_POINT_DETAIL = (floorId: any) =>
   `${BASE_URL}${GET_ACCESS_POINT_DETAIL}${floorId}`;
 const API_GET_ACCESS_POINT_GEOJSON = (floorId: any) =>
   `${BASE_URL}${GET_ACCESS_POINT_GEOJSON(floorId)}`;
+const API_EDIT_ACCESS_POINT = (floorId: any) =>
+  `${BASE_URL}${EDIT_ACCESS_POINT(floorId)}`;
 
 export {
   API_CREATE_FLOOR_PLAN,
@@ -43,4 +46,5 @@ export {
   API_GET_ALL_ACCESS_POINT,
   API_GET_ACCESS_POINT_DETAIL,
   API_GET_ACCESS_POINT_GEOJSON,
+  API_EDIT_ACCESS_POINT,
 };

@@ -12,6 +12,7 @@ import {
   UploadOutlined,
 } from "@ant-design/icons";
 import {
+  Alert,
   Button,
   Form,
   Input,
@@ -40,6 +41,7 @@ const CreateFloorPlanPage = () => {
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
   const [categoryValue] = useState("room");
   const [labelMarkersDict] = useState<LabelMarkers>({});
+  const [deleteWarning, setDeleteWarning] = useState<boolean>(false);
   // Service
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
@@ -105,6 +107,14 @@ const CreateFloorPlanPage = () => {
           map.removeLayer(labelMarkersDict[layer._leaflet_id]);
           delete labelMarkersDict[layer._leaflet_id];
         });
+      });
+
+      map.on("draw:deletestart", function () {
+        setDeleteWarning(true);
+      });
+
+      map.on("draw:deletestop", function () {
+        setDeleteWarning(false);
       });
 
       mapLRef.current = map;
@@ -270,7 +280,7 @@ const CreateFloorPlanPage = () => {
         notification.open({
           type: "success",
           message: "Creation successful",
-          description: `Lantai ${values.floorName} has been successfully created.`,
+          description: `Lantai ${values.floorName} has been created.`,
         });
       }
     } catch (error: any) {
@@ -301,16 +311,26 @@ const CreateFloorPlanPage = () => {
   return (
     <CustomLayout>
       <div className="w-full flex flex-col md:flex-row">
-        <div
-          id="map"
-          style={{
-            position: "sticky",
-            height: "88vh",
-            background: "#F5F5F5",
-          }}
-          ref={mapDivRef}
-          className="w-full md:w-3/4"
-        />
+        <div className="w-full md:w-3/4">
+          {deleteWarning && (
+            <Alert
+              type="warning"
+              showIcon
+              message="Deleting a room cannot be undone."
+              closable
+              onClose={() => setDeleteWarning(false)}
+            />
+          )}
+          <div
+            id="map"
+            style={{
+              position: "sticky",
+              height: "88vh",
+              background: "#F5F5F5",
+            }}
+            ref={mapDivRef}
+          />
+        </div>
         <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
           <div className="flex justify-between items-center gap-5">
             <h3>Create Floor Plan</h3>

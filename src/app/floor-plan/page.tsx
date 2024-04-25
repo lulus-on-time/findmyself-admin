@@ -105,7 +105,7 @@ const FloorPlanListPage = () => {
           type: "success",
           duration: 8,
           message: "Deletion successful",
-          description: `Lantai ${floorToDelete?.name} has been successfully deleted. All access points on this floor have also been removed.`,
+          description: `Lantai ${floorToDelete?.name} has been deleted. All access points on this floor have also been removed.`,
         });
         fetchData();
       }

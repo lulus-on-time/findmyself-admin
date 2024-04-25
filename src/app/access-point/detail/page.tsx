@@ -82,6 +82,7 @@ const AccessPointDetailPage = () => {
 
   useEffect(() => {
     fetchData(floorId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async (floorId: any) => {

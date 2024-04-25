@@ -1,5 +1,6 @@
 import axios from "axios";
 import {
+  API_EDIT_ACCESS_POINT,
   API_GET_ACCESS_POINT_DETAIL,
   API_GET_ACCESS_POINT_GEOJSON,
   API_GET_ALL_ACCESS_POINT,
@@ -35,4 +36,22 @@ const getAccessPointGeoJSON = async (floorId: any) => {
   }
 };
 
-export { getAllAccessPoint, getAccessPointDetail, getAccessPointGeoJSON };
+const postEditAccessPoint = async (floorId: any, dataToSend: any) => {
+  try {
+    const response = await axios.post(
+      API_EDIT_ACCESS_POINT(floorId),
+      dataToSend,
+    );
+    return response;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
+export {
+  getAllAccessPoint,
+  getAccessPointDetail,
+  getAccessPointGeoJSON,
+  postEditAccessPoint,
+};

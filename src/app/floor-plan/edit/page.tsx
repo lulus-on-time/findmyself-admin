@@ -64,6 +64,7 @@ const EditFloorPlanPage = () => {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
@@ -373,8 +374,8 @@ const EditFloorPlanPage = () => {
         router.push(PAGE_ROUTES.floorPlanList);
         notification.open({
           type: "success",
-          message: "Edit successful",
-          description: `Lantai ${values.floorName} has been successfully updated.`,
+          message: "Update successful",
+          description: `Lantai ${values.floorName} has been updated.`,
         });
       }
     } catch (error: any) {

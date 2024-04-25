@@ -7,7 +7,7 @@ import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
 import CustomLayout from "@/components/layout/CustomLayout";
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Form, Switch, notification } from "antd";
+import { Alert, Button, Card, Form, notification } from "antd";
 import { accessPointIcon, spaceLabelIcon } from "@/components/icons/marker";
 import { getFloorPlanDetail } from "@/services/floorPlan";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -16,11 +16,13 @@ import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import ApTutorialModal from "@/components/modals/ApTutorialModal";
 import ApDetailModal from "@/components/modals/ApDetailModal";
 import ConfirmationModal from "@/components/modals/ConfirmationModal";
-import { getAccessPointGeoJSON } from "@/services/accessPoint";
+import {
+  getAccessPointGeoJSON,
+  postEditAccessPoint,
+} from "@/services/accessPoint";
 
 const EditAccessPointPage = () => {
-  const searchParams = useSearchParams();
-  const floorId = searchParams.get("floorId");
+  const floorId = useSearchParams().get("floorId");
   const router = useRouter();
   // useRef
   const mapDivRef = useRef<HTMLDivElement | null>(null);
@@ -49,6 +51,7 @@ const EditAccessPointPage = () => {
 
   useEffect(() => {
     fetchFPandAP();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchFPandAP = async () => {
@@ -158,29 +161,39 @@ const EditAccessPointPage = () => {
         onEachFeature: onEachFeature,
       }).addTo(map);
 
-      // @ts-ignore
-      function pointToLayer(_: any, latlng: any) {
-        const apMarker = L.marker(latlng, {
-          icon: accessPointIcon,
-        });
-        editableLayers.current?.addLayer(apMarker);
-
-        apMarker.on("click", function () {
-          mapLRef.current!.doubleClickZoom.disable();
-          globalAp.current = apMarker;
-          editApForm.setFieldsValue({
-            location: `${spaceDict[apMarker.feature!.properties.spaceId]}`,
-            description: apMarker.feature!.properties.description,
-            bssids: apMarker.feature!.properties.bssids,
-          });
-          setEditApModalOpen(true);
-        });
-
-        return apMarker;
-      }
-
       L.geoJSON(fetchedApData.geojson, {
-        pointToLayer: pointToLayer,
+        pointToLayer(_, latlng) {
+          const apMarker = L.marker(latlng, {
+            icon: accessPointIcon,
+          });
+          editableLayers.current?.addLayer(apMarker);
+
+          apMarker.on("click", function () {
+            mapLRef.current!.doubleClickZoom.disable();
+            globalAp.current = apMarker;
+            editApForm.setFieldsValue({
+              location: `${spaceDict[apMarker.feature!.properties.spaceId]}`,
+              description: apMarker.feature!.properties.description,
+              bssids: apMarker.feature!.properties.bssids,
+            });
+            setEditApModalOpen(true);
+          });
+
+          return apMarker;
+        },
+        onEachFeature(feature, layer) {
+          // @ts-ignore
+          layer.feature = {
+            type: "Feature",
+            properties: {
+              // TODO add AP id
+              spaceId: feature.properties.spaceId,
+              bssids: feature.properties.bssids,
+              description: feature.properties.description,
+            },
+            geometry: feature.geometry,
+          };
+        },
       });
       setApData(Object(editableLayers.current!.toGeoJSON()).features);
 
@@ -238,6 +251,40 @@ const EditAccessPointPage = () => {
 
   const onFinishFailed = (errorInfo: any) => {
     console.error("Failed: ", errorInfo);
+  };
+
+  const submitData = async (dataToSend: any) => {
+    setIsSubmitting(true);
+
+    try {
+      const response = await postEditAccessPoint(floorId, dataToSend);
+      if (response.status === 200) {
+        router.push(`${PAGE_ROUTES.accessPointDetail}?floorId=${floorId}`);
+        notification.open({
+          type: "success",
+          message: "Update successful",
+          description: `Access point on Lantai ${floorName} has been updated.`,
+        });
+      }
+    } catch (error: any) {
+      setIsSubmitting(false);
+      if (error.response?.data?.errors?.message) {
+        notification.open({
+          type: "error",
+          message: "Error submitting form",
+          description: error.response.data.errors.message,
+          duration: 0,
+        });
+      } else {
+        console.error(error);
+        notification.open({
+          type: "error",
+          message: "Error submitting form",
+          description: "An unexpected error occurred.",
+          duration: 0,
+        });
+      }
+    }
   };
 
   if (isFetching) {
@@ -329,9 +376,6 @@ const EditAccessPointPage = () => {
             className="w-fit"
             onClick={() => {
               setSaveModalOpen(true);
-              console.log(
-                JSON.stringify(editableLayers.current?.toGeoJSON(), null, 2),
-              );
             }}
           >
             Save
@@ -370,7 +414,8 @@ const EditAccessPointPage = () => {
         open={saveModalOpen}
         onCancel={() => setSaveModalOpen(false)}
         okText="Save"
-        onOk={null}
+        onOk={() => submitData(editableLayers.current?.toGeoJSON())}
+        isSubmitting={isSubmitting}
       >
         Are you sure you want to save these changes?
       </ConfirmationModal>
