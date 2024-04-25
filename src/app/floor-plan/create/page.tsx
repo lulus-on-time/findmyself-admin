@@ -16,8 +16,6 @@ import {
   Form,
   Input,
   InputNumber,
-  Modal,
-  Radio,
   Tooltip,
   Upload,
   notification,
@@ -33,22 +31,21 @@ import SpaceDetailModal from "@/components/modals/SpaceDetailModal";
 
 const CreateFloorPlanPage = () => {
   const router = useRouter();
-
+  // Map
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapLRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.ImageOverlay | null>(null);
   const editableLayers = useRef<L.FeatureGroup | null>(null);
   const globalLayer = useRef<L.Polygon | null>(null);
-
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
   const [categoryValue] = useState("room");
   const [labelMarkersDict] = useState<LabelMarkers>({});
-
+  // Service
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
   const [createSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
   const [editSpaceModalOpen, setEditSpaceModalOpen] = useState(false);
-
+  // Form
   const [createSpaceForm] = Form.useForm();
   const [editSpaceForm] = Form.useForm();
 
@@ -60,12 +57,10 @@ const CreateFloorPlanPage = () => {
         minZoom: -10,
         maxZoom: 10,
       });
-
       map.fitBounds([
         [0, 0],
         [2000, 2000],
       ]);
-
       map.zoomControl.setPosition("bottomright");
 
       editableLayers.current = new L.FeatureGroup();
@@ -213,6 +208,12 @@ const CreateFloorPlanPage = () => {
       });
     });
 
+    if (category === "corridor") {
+      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+    } else {
+      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+    }
+
     setCreateSpaceModalOpen(false);
     createSpaceForm.resetFields();
   };
@@ -228,13 +229,18 @@ const CreateFloorPlanPage = () => {
     layer!.feature!.properties.category = category;
     layer!.feature!.properties.name = spaceName;
 
+    if (category === "corridor") {
+      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+    } else {
+      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+    }
+
     setEditSpaceModalOpen(false);
     editSpaceForm.resetFields();
   };
 
   const cancelCreateSpace = () => {
     editableLayers.current!.removeLayer(globalLayer.current!);
-
     setCreateSpaceModalOpen(false);
     createSpaceForm.resetFields();
   };
@@ -261,6 +267,11 @@ const CreateFloorPlanPage = () => {
       const response = await postCreateFloorPlan(dataToSend);
       if (response.status === 200) {
         router.push(PAGE_ROUTES.floorPlanList);
+        notification.open({
+          type: "success",
+          message: "Creation successful",
+          description: `Lantai ${values.floorName} has been successfully created.`,
+        });
       }
     } catch (error: any) {
       setIsLoading(false);
@@ -269,6 +280,7 @@ const CreateFloorPlanPage = () => {
           type: "error",
           message: "Error submitting form",
           description: error.response.data.error.message,
+          duration: 0,
         });
       } else {
         console.error(error);
@@ -276,6 +288,7 @@ const CreateFloorPlanPage = () => {
           type: "error",
           message: "Error submitting form",
           description: "An unexpected error occurred.",
+          duration: 0,
         });
       }
     }
