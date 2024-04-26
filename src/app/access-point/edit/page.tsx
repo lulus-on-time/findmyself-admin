@@ -348,6 +348,21 @@ const EditAccessPointPage = () => {
               className="rounded-none"
             />
           )}
+          {!errorStatus && (
+            <Alert
+              type="info"
+              showIcon
+              closable
+              message={
+                <div className="flex gap-2 items-center">
+                  <span>Tip: Click the</span>
+                  <object data="/icons/marker-button.svg" />
+                  <span>button to add a new access point</span>
+                </div>
+              }
+              className="rounded-none"
+            />
+          )}
           <div
             id="map"
             style={{

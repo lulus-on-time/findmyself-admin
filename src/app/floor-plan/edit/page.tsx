@@ -17,7 +17,9 @@ import {
   Form,
   Input,
   InputNumber,
+  Tooltip,
   Upload,
+  message,
   notification,
 } from "antd";
 import type { UploadProps } from "antd";
@@ -30,6 +32,7 @@ import SpaceDetailModal from "@/components/modals/SpaceDetailModal";
 import FpTutorialModal from "@/components/modals/FpTutorialModal";
 import { LabelMarkers } from "../type";
 import ConfirmationModal from "@/components/modals/ConfirmationModal";
+import { isMarkerInsidePolygon } from "@/utils/helper";
 
 const EditFloorPlanPage = () => {
   const floorId = useSearchParams().get("floorId");
@@ -119,10 +122,9 @@ const EditFloorPlanPage = () => {
         labelMarkersDict[feature.properties.id] = labelMarker;
 
         labelMarker.on("dragend", function () {
-          if (
-            !(layer as L.Polygon).getBounds().contains(labelMarker.getLatLng())
-          ) {
+          if (!isMarkerInsidePolygon(labelMarker, layer)) {
             labelMarker.setLatLng(feature.properties.poi);
+            message.error("POI marker must remain inside the defined space");
             return;
           }
           var poi = labelMarker.getLatLng();
@@ -286,8 +288,9 @@ const EditFloorPlanPage = () => {
     };
 
     labelMarker.on("dragend", function () {
-      if (!(layer as L.Polygon).getBounds().contains(labelMarker.getLatLng())) {
+      if (!isMarkerInsidePolygon(labelMarker, layer)) {
         labelMarker.setLatLng(poi);
+        message.error("POI marker must remain inside the defined space");
         return;
       }
       poi = labelMarker.getLatLng();
@@ -468,9 +471,11 @@ const EditFloorPlanPage = () => {
             disabled={isSubmitting || errorStatus}
           >
             <Form.Item>
-              <Upload {...props}>
-                <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
-              </Upload>
+              <Tooltip title="Display an image on the canvas to help with drawing. This image won't be saved.">
+                <Upload {...props}>
+                  <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
+                </Upload>
+              </Tooltip>
             </Form.Item>
             <Form.Item
               label="Floor Level"

@@ -19,6 +19,7 @@ import {
   InputNumber,
   Tooltip,
   Upload,
+  message,
   notification,
 } from "antd";
 import type { UploadProps } from "antd";
@@ -29,6 +30,7 @@ import { PAGE_ROUTES } from "@/config/constants";
 import { LabelMarkers } from "../type";
 import FpTutorialModal from "@/components/modals/FpTutorialModal";
 import SpaceDetailModal from "@/components/modals/SpaceDetailModal";
+import { isMarkerInsidePolygon } from "@/utils/helper";
 
 const CreateFloorPlanPage = () => {
   const router = useRouter();
@@ -200,8 +202,9 @@ const CreateFloorPlanPage = () => {
     };
 
     labelMarker.on("dragend", function () {
-      if (!(layer as L.Polygon).getBounds().contains(labelMarker.getLatLng())) {
+      if (!isMarkerInsidePolygon(labelMarker, layer)) {
         labelMarker.setLatLng(poi);
+        message.error("POI marker must remain inside the defined space");
         return;
       }
       poi = labelMarker.getLatLng();
@@ -350,9 +353,11 @@ const CreateFloorPlanPage = () => {
             disabled={isLoading}
           >
             <Form.Item>
-              <Upload {...props}>
-                <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
-              </Upload>
+              <Tooltip title="Display an image on the canvas to help with drawing. This image won't be saved.">
+                <Upload {...props}>
+                  <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
+                </Upload>
+              </Tooltip>
             </Form.Item>
             <Form.Item
               label="Floor Level"
