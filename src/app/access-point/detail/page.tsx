@@ -43,7 +43,8 @@ const AccessPointDetailPage = () => {
     {
       title: "Description",
       dataIndex: "description",
-      render: (_, record) => record.apInfo.description,
+      render: (_, record) =>
+        record.apInfo.description ? record.apInfo.description : "-",
       onCell: (record, index) => ({
         rowSpan:
           index &&

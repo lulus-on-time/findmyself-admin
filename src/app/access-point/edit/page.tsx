@@ -105,9 +105,6 @@ const EditAccessPointPage = () => {
         [floorPlanData.floor.maxY, floorPlanData.floor.maxX],
       ]);
 
-      editableLayers.current = new L.FeatureGroup();
-      map.addLayer(editableLayers.current);
-
       const fpGeojsonLayer = L.geoJSON(floorPlanData.geojson, {
         onEachFeature: onEachFeature,
       }).addTo(map);
@@ -120,55 +117,17 @@ const EditAccessPointPage = () => {
           layer.setStyle({ fillColor: "cadetblue", color: "white" });
         }
 
-        const spaceLabel = L.marker(feature.properties.poi, {
+        L.marker(feature.properties.poi, {
           icon: spaceLabelIcon(feature.properties.name),
         }).addTo(map);
 
         spaceDict[feature.properties.id] = feature.properties.name;
-
-        function newAP(e: any) {
-          const apMarker = L.marker(e.latlng, {
-            icon: accessPointIcon,
-            draggable: true,
-          });
-          editableLayers.current!.addLayer(apMarker);
-          globalAp.current = apMarker;
-
-          apMarker.feature = {
-            type: "Feature",
-            properties: {
-              spaceId: feature.properties.id,
-              bssids: [],
-              description: "",
-            },
-            geometry: apMarker.toGeoJSON().geometry,
-          };
-
-          apMarker.on("dragend", function () {
-            if (!isMarkerInsidePolygon(apMarker, layer)) {
-              dragApMarker(apMarker);
-            }
-          });
-
-          createApForm.setFieldValue(
-            "location",
-            spaceDict[feature.properties.id],
-          );
-          setCreateApModalOpen(true);
-        }
-
-        layer.on("click", function (e: any) {
-          map.doubleClickZoom.disable();
-          newAP(e);
-        });
-
-        spaceLabel.on("click", function (e: any) {
-          map.doubleClickZoom.disable();
-          newAP(e);
-        });
       }
 
-      const dragApMarker = (apMarker: L.Marker) => {
+      editableLayers.current = new L.FeatureGroup();
+      map.addLayer(editableLayers.current);
+
+      const findApSpace = (apMarker: L.Marker, isNew: boolean = false) => {
         let insideFP = false;
         fpGeojsonLayer.eachLayer(function (space: any) {
           if (isMarkerInsidePolygon(apMarker, space)) {
@@ -178,8 +137,13 @@ const EditAccessPointPage = () => {
             return;
           }
         });
-        if (insideFP) return;
-        apMarker.setLatLng(apMarker.getLatLng());
+        if (insideFP) return true;
+        if (isNew) {
+          message.error("Access point must be inside the floor plan");
+          return false;
+        }
+        const coordinates = apMarker.feature!.geometry.coordinates;
+        apMarker.setLatLng(new L.LatLng(coordinates[1], coordinates[0]));
         message.error("Access point must be inside the floor plan");
         setApData(Object(editableLayers.current!.toGeoJSON()).features);
       };
@@ -193,7 +157,7 @@ const EditAccessPointPage = () => {
           editableLayers.current?.addLayer(apMarker);
 
           apMarker.on("dragend", function () {
-            dragApMarker(apMarker);
+            findApSpace(apMarker);
           });
 
           apMarker.on("dblclick", function () {
@@ -223,6 +187,56 @@ const EditAccessPointPage = () => {
         },
       });
       setApData(Object(editableLayers.current!.toGeoJSON()).features);
+
+      const drawControl = new L.Control.Draw({
+        draw: {
+          polyline: false,
+          polygon: false,
+          circle: false,
+          circlemarker: false,
+          rectangle: false,
+          marker: { icon: accessPointIcon },
+        },
+        edit: {
+          featureGroup: editableLayers.current,
+          remove: false,
+          edit: false,
+        },
+      });
+      map.addControl(drawControl);
+
+      map.on("draw:created", function (e) {
+        const apMarker = L.marker(e.layer.getLatLng(), {
+          icon: accessPointIcon,
+          draggable: true,
+        });
+
+        apMarker.feature = {
+          type: "Feature",
+          properties: {
+            spaceId: 0,
+            bssids: [],
+            description: "",
+          },
+          geometry: apMarker.toGeoJSON().geometry,
+        };
+
+        const insideFP = findApSpace(apMarker, true);
+        if (insideFP) {
+          editableLayers.current!.addLayer(apMarker);
+          globalAp.current = apMarker;
+
+          createApForm.setFieldValue(
+            "location",
+            spaceDict[apMarker.feature.properties.spaceId],
+          );
+          setCreateApModalOpen(true);
+        }
+
+        apMarker.on("dragend", function () {
+          findApSpace(apMarker);
+        });
+      });
 
       mapLRef.current = map;
     }
@@ -330,15 +344,6 @@ const EditAccessPointPage = () => {
               message="Error fetching floor plan"
               description={errorMessage}
               type="error"
-              showIcon
-              className="rounded-none"
-            />
-          )}
-          {!errorStatus && (
-            <Alert
-              message="Click anywhere within the floor plan to add an access point"
-              type="info"
-              closable
               showIcon
               className="rounded-none"
             />
