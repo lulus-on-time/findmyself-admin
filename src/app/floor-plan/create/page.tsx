@@ -91,6 +91,9 @@ const CreateFloorPlanPage = () => {
           edit: false,
         },
       });
+      L.EditToolbar.Delete.include({
+        removeAllLayers: false,
+      });
       map.addControl(drawControl);
 
       map.on("draw:created", function (e) {
@@ -319,7 +322,7 @@ const CreateFloorPlanPage = () => {
             <Alert
               type="warning"
               showIcon
-              message="Deleting a room cannot be undone."
+              message="Caution: Deleting a room cannot be undone."
               closable
               onClose={() => setDeleteWarning(false)}
             />

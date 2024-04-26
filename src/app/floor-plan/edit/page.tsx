@@ -172,6 +172,9 @@ const EditFloorPlanPage = () => {
           edit: false,
         },
       });
+      L.EditToolbar.Delete.include({
+        removeAllLayers: false,
+      });
       map.addControl(drawControl);
 
       map.on("draw:created", function (e) {
