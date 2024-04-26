@@ -51,17 +51,7 @@ const AccessPointListPage = () => {
       width: "20%",
     },
     {
-      title: "AP Location",
-      dataIndex: "locationName",
-      width: "20%",
-    },
-    {
-      title: "Description",
-      dataIndex: "description",
-      render: (_, record) => record.description,
-    },
-    {
-      title: "Total",
+      title: "Total AP",
       dataIndex: "apTotal",
       render: (_, record) => record.floor.apTotal,
       onCell: (record, index) => ({
@@ -73,6 +63,16 @@ const AccessPointListPage = () => {
             : record.floor.apTotal,
       }),
       width: "10%",
+    },
+    {
+      title: "AP Location",
+      dataIndex: "locationName",
+      width: "20%",
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      render: (_, record) => record.description,
     },
   ];
 

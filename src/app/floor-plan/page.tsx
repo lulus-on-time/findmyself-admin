@@ -36,7 +36,7 @@ const FloorPlanListPage = () => {
       width: "20%",
     },
     {
-      title: "Name",
+      title: "Floor Name",
       dataIndex: "name",
       render: (_, record) => (
         <a href={`${PAGE_ROUTES.floorPlanDetail}?floorId=${record.key}`}>

@@ -5,21 +5,22 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
-import CustomLayout from "@/components/layout/CustomLayout";
+import { Alert, Button, Card, Form, message, notification } from "antd";
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Form, notification } from "antd";
 import { accessPointIcon, spaceLabelIcon } from "@/components/icons/marker";
-import { getFloorPlanDetail } from "@/services/floorPlan";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PAGE_ROUTES } from "@/config/constants";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
+import CustomLayout from "@/components/layout/CustomLayout";
 import ApTutorialModal from "@/components/modals/ApTutorialModal";
 import ApDetailModal from "@/components/modals/ApDetailModal";
 import ConfirmationModal from "@/components/modals/ConfirmationModal";
+import { getFloorPlanDetail } from "@/services/floorPlan";
 import {
   getAccessPointGeoJSON,
   postEditAccessPoint,
 } from "@/services/accessPoint";
+import { isMarkerInsidePolygon } from "@/utils/helper";
 
 const EditAccessPointPage = () => {
   const floorId = useSearchParams().get("floorId");
@@ -107,6 +108,10 @@ const EditAccessPointPage = () => {
       editableLayers.current = new L.FeatureGroup();
       map.addLayer(editableLayers.current);
 
+      const fpGeojsonLayer = L.geoJSON(floorPlanData.geojson, {
+        onEachFeature: onEachFeature,
+      }).addTo(map);
+
       // @ts-ignore
       function onEachFeature(feature: any, layer: any) {
         if (feature.properties.category === "corridor") {
@@ -121,10 +126,13 @@ const EditAccessPointPage = () => {
 
         spaceDict[feature.properties.id] = feature.properties.name;
 
-        function addAP(e: any) {
+        function newAP(e: any) {
           const apMarker = L.marker(e.latlng, {
             icon: accessPointIcon,
+            draggable: true,
           });
+          editableLayers.current!.addLayer(apMarker);
+          globalAp.current = apMarker;
 
           apMarker.feature = {
             type: "Feature",
@@ -136,8 +144,11 @@ const EditAccessPointPage = () => {
             geometry: apMarker.toGeoJSON().geometry,
           };
 
-          editableLayers.current!.addLayer(apMarker);
-          globalAp.current = apMarker;
+          apMarker.on("dragend", function () {
+            if (!isMarkerInsidePolygon(apMarker, layer)) {
+              dragApMarker(apMarker);
+            }
+          });
 
           createApForm.setFieldValue(
             "location",
@@ -148,27 +159,44 @@ const EditAccessPointPage = () => {
 
         layer.on("click", function (e: any) {
           map.doubleClickZoom.disable();
-          addAP(e);
+          newAP(e);
         });
 
         spaceLabel.on("click", function (e: any) {
           map.doubleClickZoom.disable();
-          addAP(e);
+          newAP(e);
         });
       }
 
-      L.geoJSON(floorPlanData.geojson, {
-        onEachFeature: onEachFeature,
-      }).addTo(map);
+      const dragApMarker = (apMarker: L.Marker) => {
+        let insideFP = false;
+        fpGeojsonLayer.eachLayer(function (space: any) {
+          if (isMarkerInsidePolygon(apMarker, space)) {
+            apMarker.feature!.properties.spaceId = space.feature.properties.id;
+            setApData(Object(editableLayers.current!.toGeoJSON()).features);
+            insideFP = true;
+            return;
+          }
+        });
+        if (insideFP) return;
+        apMarker.setLatLng(apMarker.getLatLng());
+        message.error("Access point must be inside the floor plan");
+        setApData(Object(editableLayers.current!.toGeoJSON()).features);
+      };
 
       L.geoJSON(fetchedApData.geojson, {
         pointToLayer(_, latlng) {
           const apMarker = L.marker(latlng, {
             icon: accessPointIcon,
+            draggable: true,
           });
           editableLayers.current?.addLayer(apMarker);
 
-          apMarker.on("click", function () {
+          apMarker.on("dragend", function () {
+            dragApMarker(apMarker);
+          });
+
+          apMarker.on("dblclick", function () {
             mapLRef.current!.doubleClickZoom.disable();
             globalAp.current = apMarker;
             editApForm.setFieldsValue({
@@ -178,7 +206,6 @@ const EditAccessPointPage = () => {
             });
             setEditApModalOpen(true);
           });
-
           return apMarker;
         },
         onEachFeature(feature, layer) {
@@ -186,10 +213,10 @@ const EditAccessPointPage = () => {
           layer.feature = {
             type: "Feature",
             properties: {
-              // TODO add AP id
               spaceId: feature.properties.spaceId,
               bssids: feature.properties.bssids,
               description: feature.properties.description,
+              id: feature.properties.id,
             },
             geometry: feature.geometry,
           };
@@ -207,12 +234,15 @@ const EditAccessPointPage = () => {
     apMarker!.feature!.properties.bssids = values.bssids;
     setApData(Object(editableLayers.current!.toGeoJSON()).features);
 
-    apMarker!.on("click", function () {
+    apMarker!.on("dblclick", function () {
       mapLRef.current!.doubleClickZoom.disable();
       globalAp.current = apMarker;
       editApForm.setFieldsValue({
         location: `${spaceDict[apMarker!.feature!.properties.spaceId]}`,
-        description: apMarker!.feature!.properties.description,
+        description:
+          apMarker!.feature!.properties.description === "-"
+            ? ""
+            : apMarker!.feature!.properties.description,
         bssids: apMarker!.feature!.properties.bssids,
       });
       setEditApModalOpen(true);
@@ -306,7 +336,7 @@ const EditAccessPointPage = () => {
           )}
           {!errorStatus && (
             <Alert
-              message="Click anywhere within the floor plan (blue area) to add an access point"
+              message="Click anywhere within the floor plan to add an access point"
               type="info"
               closable
               showIcon

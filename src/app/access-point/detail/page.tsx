@@ -55,16 +55,6 @@ const AccessPointDetailPage = () => {
       width: "25%",
     },
     {
-      title: "SSID",
-      dataIndex: "ssid",
-      width: "15%",
-    },
-    {
-      title: "BSSID",
-      dataIndex: "bssid",
-      width: "25%",
-    },
-    {
       title: "Total BSSID",
       dataIndex: "bssidTotal",
       render: (_, record) => record.apInfo.bssidTotal,
@@ -78,11 +68,21 @@ const AccessPointDetailPage = () => {
       }),
       width: "10%",
     },
+    {
+      title: "SSID",
+      dataIndex: "ssid",
+      width: "15%",
+    },
+    {
+      title: "BSSID",
+      dataIndex: "bssid",
+      width: "25%",
+    },
   ];
 
   useEffect(() => {
     fetchData(floorId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async (floorId: any) => {
