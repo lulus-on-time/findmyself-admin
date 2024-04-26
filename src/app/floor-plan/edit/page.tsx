@@ -17,14 +17,14 @@ import {
   Form,
   Input,
   InputNumber,
-  Switch,
   Tooltip,
   Upload,
+  message,
   notification,
 } from "antd";
 import type { UploadProps } from "antd";
 import { spaceLabelIcon } from "@/components/icons/marker";
-import { getFloorPlanDetail } from "@/services/floorPlan";
+import { getFloorPlanDetail, postEditFloorPlan } from "@/services/floorPlan";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PAGE_ROUTES } from "@/config/constants";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
@@ -32,22 +32,21 @@ import SpaceDetailModal from "@/components/modals/SpaceDetailModal";
 import FpTutorialModal from "@/components/modals/FpTutorialModal";
 import { LabelMarkers } from "../type";
 import ConfirmationModal from "@/components/modals/ConfirmationModal";
+import { isMarkerInsidePolygon } from "@/utils/helper";
 
 const EditFloorPlanPage = () => {
-  const searchParams = useSearchParams();
-  const floorId = searchParams.get("floorId");
-
+  const floorId = useSearchParams().get("floorId");
   const router = useRouter();
-  // useRef
+  // Map
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapLRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.ImageOverlay | null>(null);
   const editableLayers = useRef<L.FeatureGroup | null>(null);
   const globalLayer = useRef<L.Polygon | null>(null);
-  //
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
   const [categoryValue] = useState("room");
   const [labelMarkersDict] = useState<LabelMarkers>({});
+  const [deleteWarning, setDeleteWarning] = useState<boolean>(false);
   // Modal
   const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
   const [createSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
@@ -68,6 +67,7 @@ const EditFloorPlanPage = () => {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
@@ -78,13 +78,13 @@ const EditFloorPlanPage = () => {
       initMap();
       setIsFetching(false);
     } catch (error: any) {
-      setIsFetching(false);
       setErrorStatus(true);
       if (error.response?.data?.error?.message) {
         setErrorMessage(error.response.data.error.message);
       } else {
         setErrorMessage(error.toString());
       }
+      setIsFetching(false);
     }
   };
 
@@ -122,10 +122,9 @@ const EditFloorPlanPage = () => {
         labelMarkersDict[feature.properties.id] = labelMarker;
 
         labelMarker.on("dragend", function () {
-          if (
-            !(layer as L.Polygon).getBounds().contains(labelMarker.getLatLng())
-          ) {
+          if (!isMarkerInsidePolygon(labelMarker, layer)) {
             labelMarker.setLatLng(feature.properties.poi);
+            message.error("POI marker must remain inside the defined space");
             return;
           }
           var poi = labelMarker.getLatLng();
@@ -173,6 +172,9 @@ const EditFloorPlanPage = () => {
           edit: false,
         },
       });
+      L.EditToolbar.Delete.include({
+        removeAllLayers: false,
+      });
       map.addControl(drawControl);
 
       map.on("draw:created", function (e) {
@@ -196,6 +198,14 @@ const EditFloorPlanPage = () => {
             delete labelMarkersDict[layer._leaflet_id];
           }
         });
+      });
+
+      map.on("draw:deletestart", function () {
+        setDeleteWarning(true);
+      });
+
+      map.on("draw:deletestop", function () {
+        setDeleteWarning(false);
       });
 
       mapLRef.current = map;
@@ -281,8 +291,9 @@ const EditFloorPlanPage = () => {
     };
 
     labelMarker.on("dragend", function () {
-      if (!(layer as L.Polygon).getBounds().contains(labelMarker.getLatLng())) {
+      if (!isMarkerInsidePolygon(labelMarker, layer)) {
         labelMarker.setLatLng(poi);
+        message.error("POI marker must remain inside the defined space");
         return;
       }
       poi = labelMarker.getLatLng();
@@ -298,6 +309,12 @@ const EditFloorPlanPage = () => {
       );
       editSpaceForm.setFieldValue("spaceName", layer!.feature!.properties.name);
     });
+
+    if (category === "corridor") {
+      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+    } else {
+      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+    }
 
     setCreateSpaceModalOpen(false);
     createSpaceForm.resetFields();
@@ -318,13 +335,18 @@ const EditFloorPlanPage = () => {
     layer!.feature!.properties.category = category;
     layer!.feature!.properties.name = spaceName;
 
+    if (category === "corridor") {
+      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+    } else {
+      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+    }
+
     setEditSpaceModalOpen(false);
     editSpaceForm.resetFields();
   };
 
   const cancelCreateSpace = () => {
     editableLayers.current!.removeLayer(globalLayer.current!);
-
     setCreateSpaceModalOpen(false);
     createSpaceForm.resetFields();
   };
@@ -345,37 +367,42 @@ const EditFloorPlanPage = () => {
       {},
       {
         floor: {
-          id: floorId,
           level: values.floorLevel,
           name: values.floorName,
         },
       },
       editableLayers.current?.toGeoJSON(),
     );
-    console.log(JSON.stringify(dataToSend, null, 2));
 
-    // try {
-    //   const response = await postCreateFloorPlan(dataToSend);
-    //   if (response.status === 200) {
-    //     router.push(PAGE_ROUTES.floorPlanList);
-    //   }
-    // } catch (error: any) {
-    //   setIsSubmitting(false);
-    //   if (error.response?.data?.error?.message) {
-    //     notification.open({
-    //       type: "error",
-    //       message: "Error submitting form",
-    //       description: error.response.data.error.message,
-    //     });
-    //   } else {
-    //     console.error(error);
-    //     notification.open({
-    //       type: "error",
-    //       message: "Error submitting form",
-    //       description: "An unexpected error occurred.",
-    //     });
-    //   }
-    // }
+    try {
+      const response = await postEditFloorPlan(floorId, dataToSend);
+      if (response.status === 200) {
+        router.push(PAGE_ROUTES.floorPlanList);
+        notification.open({
+          type: "success",
+          message: "Update successful",
+          description: `Lantai ${values.floorName} has been updated.`,
+        });
+      }
+    } catch (error: any) {
+      setIsSubmitting(false);
+      if (error.response?.data?.errors?.message) {
+        notification.open({
+          type: "error",
+          message: "Error submitting form",
+          description: error.response.data.errors.message,
+          duration: 0,
+        });
+      } else {
+        console.error(error);
+        notification.open({
+          type: "error",
+          message: "Error submitting form",
+          description: "An unexpected error occurred.",
+          duration: 0,
+        });
+      }
+    }
   };
 
   const onFinishFailed = (errorInfo: any) => {
@@ -397,6 +424,16 @@ const EditFloorPlanPage = () => {
               type="error"
               showIcon
               className="rounded-none"
+            />
+          )}
+          {deleteWarning && (
+            <Alert
+              type="warning"
+              showIcon
+              message="Warning"
+              description="Deleting a room will also remove all access points within that room. This action cannot be undone."
+              closable
+              onClose={() => setDeleteWarning(false)}
             />
           )}
           <div
@@ -424,7 +461,10 @@ const EditFloorPlanPage = () => {
                 <QuestionCircleOutlined />
               </Button>
             </div>
-            <span>{`Changes won't be saved until the save button is clicked.`}</span>
+            <Alert
+              type="warning"
+              message={`Changes won't be saved until the save button is clicked.`}
+            />
           </div>
           <Form
             layout="vertical"
@@ -434,9 +474,11 @@ const EditFloorPlanPage = () => {
             disabled={isSubmitting || errorStatus}
           >
             <Form.Item>
-              <Upload {...props}>
-                <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
-              </Upload>
+              <Tooltip title="Display an image on the canvas to help with drawing. This image won't be saved.">
+                <Upload {...props}>
+                  <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
+                </Upload>
+              </Tooltip>
             </Form.Item>
             <Form.Item
               label="Floor Level"

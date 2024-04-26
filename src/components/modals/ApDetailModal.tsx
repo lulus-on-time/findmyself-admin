@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Button, Form, Input, Modal } from "antd";
+import { Button, Form, Input, Modal, Popconfirm } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 
 const ApDetailModal = ({
@@ -89,9 +89,23 @@ const ApDetailModal = ({
         <Form.Item className="w-full flex justify-end">
           <div className="flex gap-2">
             {onDelete && (
-              <Button type="primary" danger onClick={onDelete}>
-                Delete AP
-              </Button>
+              <Popconfirm
+                title="Delete Access Point"
+                description={
+                  <span className="pr-5">
+                    Are you sure to delete this AP?
+                    <br />
+                    This action cannot be undone.
+                  </span>
+                }
+                onConfirm={onDelete}
+                okText="Yes"
+                cancelText="No"
+              >
+                <Button type="primary" danger>
+                  Delete AP
+                </Button>
+              </Popconfirm>
             )}
             <Button onClick={onCancel}>Cancel</Button>
             <Button type="primary" htmlType="submit">

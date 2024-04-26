@@ -12,14 +12,14 @@ import {
   UploadOutlined,
 } from "@ant-design/icons";
 import {
+  Alert,
   Button,
   Form,
   Input,
   InputNumber,
-  Modal,
-  Radio,
   Tooltip,
   Upload,
+  message,
   notification,
 } from "antd";
 import type { UploadProps } from "antd";
@@ -30,25 +30,26 @@ import { PAGE_ROUTES } from "@/config/constants";
 import { LabelMarkers } from "../type";
 import FpTutorialModal from "@/components/modals/FpTutorialModal";
 import SpaceDetailModal from "@/components/modals/SpaceDetailModal";
+import { isMarkerInsidePolygon } from "@/utils/helper";
 
 const CreateFloorPlanPage = () => {
   const router = useRouter();
-
+  // Map
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapLRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.ImageOverlay | null>(null);
   const editableLayers = useRef<L.FeatureGroup | null>(null);
   const globalLayer = useRef<L.Polygon | null>(null);
-
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
   const [categoryValue] = useState("room");
   const [labelMarkersDict] = useState<LabelMarkers>({});
-
+  const [deleteWarning, setDeleteWarning] = useState<boolean>(false);
+  // Service
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
   const [createSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
   const [editSpaceModalOpen, setEditSpaceModalOpen] = useState(false);
-
+  // Form
   const [createSpaceForm] = Form.useForm();
   const [editSpaceForm] = Form.useForm();
 
@@ -60,12 +61,10 @@ const CreateFloorPlanPage = () => {
         minZoom: -10,
         maxZoom: 10,
       });
-
       map.fitBounds([
         [0, 0],
         [2000, 2000],
       ]);
-
       map.zoomControl.setPosition("bottomright");
 
       editableLayers.current = new L.FeatureGroup();
@@ -92,6 +91,9 @@ const CreateFloorPlanPage = () => {
           edit: false,
         },
       });
+      L.EditToolbar.Delete.include({
+        removeAllLayers: false,
+      });
       map.addControl(drawControl);
 
       map.on("draw:created", function (e) {
@@ -110,6 +112,14 @@ const CreateFloorPlanPage = () => {
           map.removeLayer(labelMarkersDict[layer._leaflet_id]);
           delete labelMarkersDict[layer._leaflet_id];
         });
+      });
+
+      map.on("draw:deletestart", function () {
+        setDeleteWarning(true);
+      });
+
+      map.on("draw:deletestop", function () {
+        setDeleteWarning(false);
       });
 
       mapLRef.current = map;
@@ -195,8 +205,9 @@ const CreateFloorPlanPage = () => {
     };
 
     labelMarker.on("dragend", function () {
-      if (!(layer as L.Polygon).getBounds().contains(labelMarker.getLatLng())) {
+      if (!isMarkerInsidePolygon(labelMarker, layer)) {
         labelMarker.setLatLng(poi);
+        message.error("POI marker must remain inside the defined space");
         return;
       }
       poi = labelMarker.getLatLng();
@@ -213,6 +224,12 @@ const CreateFloorPlanPage = () => {
       });
     });
 
+    if (category === "corridor") {
+      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+    } else {
+      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+    }
+
     setCreateSpaceModalOpen(false);
     createSpaceForm.resetFields();
   };
@@ -228,13 +245,18 @@ const CreateFloorPlanPage = () => {
     layer!.feature!.properties.category = category;
     layer!.feature!.properties.name = spaceName;
 
+    if (category === "corridor") {
+      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+    } else {
+      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+    }
+
     setEditSpaceModalOpen(false);
     editSpaceForm.resetFields();
   };
 
   const cancelCreateSpace = () => {
     editableLayers.current!.removeLayer(globalLayer.current!);
-
     setCreateSpaceModalOpen(false);
     createSpaceForm.resetFields();
   };
@@ -261,6 +283,11 @@ const CreateFloorPlanPage = () => {
       const response = await postCreateFloorPlan(dataToSend);
       if (response.status === 200) {
         router.push(PAGE_ROUTES.floorPlanList);
+        notification.open({
+          type: "success",
+          message: "Creation successful",
+          description: `Lantai ${values.floorName} has been created.`,
+        });
       }
     } catch (error: any) {
       setIsLoading(false);
@@ -269,6 +296,7 @@ const CreateFloorPlanPage = () => {
           type: "error",
           message: "Error submitting form",
           description: error.response.data.error.message,
+          duration: 0,
         });
       } else {
         console.error(error);
@@ -276,6 +304,7 @@ const CreateFloorPlanPage = () => {
           type: "error",
           message: "Error submitting form",
           description: "An unexpected error occurred.",
+          duration: 0,
         });
       }
     }
@@ -288,16 +317,26 @@ const CreateFloorPlanPage = () => {
   return (
     <CustomLayout>
       <div className="w-full flex flex-col md:flex-row">
-        <div
-          id="map"
-          style={{
-            position: "sticky",
-            height: "88vh",
-            background: "#F5F5F5",
-          }}
-          ref={mapDivRef}
-          className="w-full md:w-3/4"
-        />
+        <div className="w-full md:w-3/4">
+          {deleteWarning && (
+            <Alert
+              type="warning"
+              showIcon
+              message="Caution: Deleting a room cannot be undone."
+              closable
+              onClose={() => setDeleteWarning(false)}
+            />
+          )}
+          <div
+            id="map"
+            style={{
+              position: "sticky",
+              height: "88vh",
+              background: "#F5F5F5",
+            }}
+            ref={mapDivRef}
+          />
+        </div>
         <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
           <div className="flex justify-between items-center gap-5">
             <h3>Create Floor Plan</h3>
@@ -317,9 +356,11 @@ const CreateFloorPlanPage = () => {
             disabled={isLoading}
           >
             <Form.Item>
-              <Upload {...props}>
-                <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
-              </Upload>
+              <Tooltip title="Display an image on the canvas to help with drawing. This image won't be saved.">
+                <Upload {...props}>
+                  <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
+                </Upload>
+              </Tooltip>
             </Form.Item>
             <Form.Item
               label="Floor Level"

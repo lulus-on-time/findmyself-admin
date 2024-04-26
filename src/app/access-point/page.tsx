@@ -5,15 +5,20 @@ import CustomLayout from "@/components/layout/CustomLayout";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import { PAGE_ROUTES } from "@/config/constants";
 import { PlusOutlined } from "@ant-design/icons";
-import { Alert, Button, Modal, Select, Table, TableColumnsType } from "antd";
+import {
+  Alert,
+  Button,
+  Modal,
+  Select,
+  Space,
+  Table,
+  TableColumnsType,
+} from "antd";
 import { AccessPointDataType } from "./type";
 import { getAllFloorPlan } from "@/services/floorPlan";
-import { useRouter } from "next/navigation";
 import { getAllAccessPoint } from "@/services/accessPoint";
 
 const AccessPointListPage = () => {
-  const router = useRouter();
-
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [accessPointData, setAccessPointData] = useState<any>(null);
   const [errorStatus, setErrorStatus] = useState<boolean>(false);
@@ -35,7 +40,7 @@ const AccessPointListPage = () => {
     {
       title: "Floor",
       dataIndex: "floorName",
-      render: (_, record) => <span>Lantai {record.floor.name}</span>,
+      render: (_, record) => `Lantai ${record.floor.name}`,
       onCell: (record, index) => ({
         rowSpan:
           index &&
@@ -44,20 +49,10 @@ const AccessPointListPage = () => {
             ? 0
             : record.floor.apTotal,
       }),
-      width: "20%",
+      width: "17.5%",
     },
     {
-      title: "AP Location",
-      dataIndex: "locationName",
-      width: "20%",
-    },
-    {
-      title: "Description",
-      dataIndex: "description",
-      render: (_, record) => record.description,
-    },
-    {
-      title: "Total",
+      title: "Total AP",
       dataIndex: "apTotal",
       render: (_, record) => record.floor.apTotal,
       onCell: (record, index) => ({
@@ -71,12 +66,29 @@ const AccessPointListPage = () => {
       width: "10%",
     },
     {
+      title: "AP Location",
+      dataIndex: "locationName",
+      width: "20%",
+    },
+    {
+      title: "Description",
+      dataIndex: "description",
+      render: (_, record) => (record.description ? record.description : "-"),
+    },
+    {
       title: "Action",
-      dataIndex: "action",
       render: (_, record) => (
-        <a href={`${PAGE_ROUTES.accessPointDetail}?floorId=${record.floor.id}`}>
-          Lihat BSSID
-        </a>
+        <Space size={"large"}>
+          <a
+            href={`${PAGE_ROUTES.accessPointDetail}?floorId=${record.floor.id}`}
+          >
+            BSSID Data
+          </a>
+          |
+          <a href={`${PAGE_ROUTES.editAccessPoint}?floorId=${record.floor.id}`}>
+            Map
+          </a>
+        </Space>
       ),
       onCell: (record, index) => ({
         rowSpan:
@@ -86,7 +98,7 @@ const AccessPointListPage = () => {
             ? 0
             : record.floor.apTotal,
       }),
-      width: "10%",
+      width: "17.5%",
     },
   ];
 

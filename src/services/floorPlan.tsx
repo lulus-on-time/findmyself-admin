@@ -2,6 +2,7 @@ import axios from "axios";
 import {
   API_CREATE_FLOOR_PLAN,
   API_DELETE_FLOOR_PLAN,
+  API_EDIT_FLOOR_PLAN,
   API_GET_ALL_FLOOR_PLAN,
   API_GET_FLOOR_PLAN_DETAIL,
 } from "@/config/endpoint";
@@ -46,9 +47,20 @@ const deleteFloorPlan = async (floorId: any) => {
   }
 };
 
+const postEditFloorPlan = async (floorId: any, dataToSend: any) => {
+  try {
+    const response = await axios.post(API_EDIT_FLOOR_PLAN(floorId), dataToSend);
+    return response;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
+
 export {
   postCreateFloorPlan,
   getAllFloorPlan,
   getFloorPlanDetail,
   deleteFloorPlan,
+  postEditFloorPlan,
 };

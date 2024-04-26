@@ -36,7 +36,7 @@ const FloorPlanListPage = () => {
       width: "20%",
     },
     {
-      title: "Name",
+      title: "Floor Name",
       dataIndex: "name",
       render: (_, record) => (
         <a href={`${PAGE_ROUTES.floorPlanDetail}?floorId=${record.key}`}>
@@ -105,7 +105,7 @@ const FloorPlanListPage = () => {
           type: "success",
           duration: 8,
           message: "Deletion successful",
-          description: `Lantai ${floorToDelete?.name} has been successfully deleted. All access points on this floor have also been removed.`,
+          description: `Lantai ${floorToDelete?.name} has been deleted. All access points on this floor have also been removed.`,
         });
         fetchData();
       }

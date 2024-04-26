@@ -43,7 +43,8 @@ const AccessPointDetailPage = () => {
     {
       title: "Description",
       dataIndex: "description",
-      render: (_, record) => record.apInfo.description,
+      render: (_, record) =>
+        record.apInfo.description ? record.apInfo.description : "-",
       onCell: (record, index) => ({
         rowSpan:
           index &&
@@ -52,16 +53,6 @@ const AccessPointDetailPage = () => {
             ? 0
             : record.apInfo.bssidTotal,
       }),
-      width: "25%",
-    },
-    {
-      title: "SSID",
-      dataIndex: "ssid",
-      width: "15%",
-    },
-    {
-      title: "BSSID",
-      dataIndex: "bssid",
       width: "25%",
     },
     {
@@ -78,10 +69,21 @@ const AccessPointDetailPage = () => {
       }),
       width: "10%",
     },
+    {
+      title: "SSID",
+      dataIndex: "ssid",
+      width: "15%",
+    },
+    {
+      title: "BSSID",
+      dataIndex: "bssid",
+      width: "25%",
+    },
   ];
 
   useEffect(() => {
     fetchData(floorId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async (floorId: any) => {
