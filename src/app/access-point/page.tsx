@@ -76,15 +76,15 @@ const AccessPointListPage = () => {
       render: (_, record) => (record.description ? record.description : "-"),
     },
     {
-      title: "Action",
+      title: "Detail",
       render: (_, record) => (
         <Space size={"large"}>
           <a
             href={`${PAGE_ROUTES.accessPointDetail}?floorId=${record.floor.id}`}
           >
-            BSSID Data
+            BSSID
           </a>
-          |
+          <span className="opacity-20">|</span>
           <a href={`${PAGE_ROUTES.editAccessPoint}?floorId=${record.floor.id}`}>
             Map
           </a>

@@ -7,6 +7,7 @@ import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
 import CustomLayout from "@/components/layout/CustomLayout";
 import {
+  AimOutlined,
   InfoCircleOutlined,
   QuestionCircleOutlined,
   UploadOutlined,
@@ -14,9 +15,11 @@ import {
 import {
   Alert,
   Button,
+  Card,
   Form,
   Input,
   InputNumber,
+  Slider,
   Tooltip,
   Upload,
   message,
@@ -39,6 +42,7 @@ const CreateFloorPlanPage = () => {
   const mapLRef = useRef<L.Map | null>(null);
   const overlayRef = useRef<L.ImageOverlay | null>(null);
   const editableLayers = useRef<L.FeatureGroup | null>(null);
+  const drawControlRef = useRef<any>(null);
   const globalLayer = useRef<L.Polygon | null>(null);
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
   const [categoryValue] = useState("room");
@@ -58,8 +62,8 @@ const CreateFloorPlanPage = () => {
     if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
         crs: L.CRS.Simple,
-        minZoom: -10,
-        maxZoom: 10,
+        minZoom: -2,
+        maxZoom: 2,
       });
       map.fitBounds([
         [0, 0],
@@ -94,7 +98,7 @@ const CreateFloorPlanPage = () => {
       L.EditToolbar.Delete.include({
         removeAllLayers: false,
       });
-      map.addControl(drawControl);
+      drawControlRef.current = drawControl;
 
       map.on("draw:created", function (e) {
         const layer = (e as L.DrawEvents.Created).layer;
@@ -128,6 +132,8 @@ const CreateFloorPlanPage = () => {
 
   useEffect(() => {
     if (baseImageUrl && mapLRef.current) {
+      mapLRef.current.addControl(drawControlRef.current);
+
       const baseImage = new Image();
       baseImage.src = baseImageUrl;
 
@@ -225,9 +231,9 @@ const CreateFloorPlanPage = () => {
     });
 
     if (category === "corridor") {
-      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "gray", color: "white", opacity: 1 });
     } else {
-      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "black", color: "white", opacity: 1 });
     }
 
     setCreateSpaceModalOpen(false);
@@ -246,9 +252,9 @@ const CreateFloorPlanPage = () => {
     layer!.feature!.properties.name = spaceName;
 
     if (category === "corridor") {
-      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "gray", color: "white", opacity: 1 });
     } else {
-      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "black", color: "white", opacity: 1 });
     }
 
     setEditSpaceModalOpen(false);
@@ -296,7 +302,6 @@ const CreateFloorPlanPage = () => {
           type: "error",
           message: "Error submitting form",
           description: error.response.data.error.message,
-          duration: 0,
         });
       } else {
         console.error(error);
@@ -304,7 +309,6 @@ const CreateFloorPlanPage = () => {
           type: "error",
           message: "Error submitting form",
           description: "An unexpected error occurred.",
-          duration: 0,
         });
       }
     }
@@ -336,6 +340,12 @@ const CreateFloorPlanPage = () => {
             }}
             ref={mapDivRef}
           />
+          <Button
+            size="large"
+            icon={<AimOutlined />}
+            className="absolute left-3 bottom-3 border-2 flex justify-center items-center"
+            onClick={() => mapLRef.current!.flyTo([0, 0])}
+          />
         </div>
         <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
           <div className="flex justify-between items-center gap-5">
@@ -355,12 +365,40 @@ const CreateFloorPlanPage = () => {
             onFinishFailed={onFinishFailed}
             disabled={isLoading}
           >
-            <Form.Item>
-              <Tooltip title="Display an image on the canvas to help with drawing. This image won't be saved.">
-                <Upload {...props}>
-                  <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
-                </Upload>
-              </Tooltip>
+            <Form.Item
+              label="Image Overlay"
+              tooltip={{
+                title:
+                  "Display an image on the canvas to help with drawing. This image won't be saved.",
+                icon: <InfoCircleOutlined />,
+              }}
+              required
+            >
+              <Card>
+                <div className="flex flex-col gap-5">
+                  <Tooltip title="Uploading a new image will replace the existing one">
+                    <Upload {...props}>
+                      <Button icon={<UploadOutlined />}>
+                        Upload New Image
+                      </Button>
+                    </Upload>
+                  </Tooltip>
+                  <div>
+                    <span>Opacity:</span>
+                    <Slider
+                      min={0}
+                      max={100}
+                      step={10}
+                      onChange={(value) => {
+                        overlayRef.current?.setOpacity(value / 100);
+                      }}
+                      defaultValue={100}
+                      marks={{ 0: "0", 100: "100%" }}
+                      disabled={baseImageUrl ? false : true}
+                    />
+                  </div>
+                </div>
+              </Card>
             </Form.Item>
             <Form.Item
               label="Floor Level"
@@ -387,7 +425,12 @@ const CreateFloorPlanPage = () => {
               />
             </Form.Item>
             <Form.Item className="mt-10">
-              <Button type="primary" htmlType="submit" loading={isLoading}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={isLoading}
+                disabled={Object.keys(labelMarkersDict).length === 0}
+              >
                 Submit
               </Button>
             </Form.Item>

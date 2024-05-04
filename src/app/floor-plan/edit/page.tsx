@@ -7,6 +7,7 @@ import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
 import CustomLayout from "@/components/layout/CustomLayout";
 import {
+  AimOutlined,
   InfoCircleOutlined,
   QuestionCircleOutlined,
   UploadOutlined,
@@ -14,9 +15,11 @@ import {
 import {
   Alert,
   Button,
+  Card,
   Form,
   Input,
   InputNumber,
+  Slider,
   Tooltip,
   Upload,
   message,
@@ -96,8 +99,8 @@ const EditFloorPlanPage = () => {
     if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
         crs: L.CRS.Simple,
-        minZoom: -10,
-        maxZoom: 10,
+        minZoom: -2,
+        maxZoom: 2,
       });
       map.zoomControl.setPosition("bottomright");
       map.fitBounds([
@@ -110,9 +113,9 @@ const EditFloorPlanPage = () => {
       // @ts-ignore
       function onEachFeature(feature: any, layer: any) {
         if (feature.properties.category === "corridor") {
-          layer.setStyle({ fillColor: "lightblue", color: "white" });
+          layer.setStyle({ fillColor: "gray", color: "white" });
         } else {
-          layer.setStyle({ fillColor: "cadetblue", color: "white" });
+          layer.setStyle({ fillColor: "black", color: "white" });
         }
 
         var labelMarker = L.marker(feature.properties.poi, {
@@ -311,9 +314,9 @@ const EditFloorPlanPage = () => {
     });
 
     if (category === "corridor") {
-      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "gray", color: "white", opacity: 1 });
     } else {
-      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "black", color: "white", opacity: 1 });
     }
 
     setCreateSpaceModalOpen(false);
@@ -336,9 +339,9 @@ const EditFloorPlanPage = () => {
     layer!.feature!.properties.name = spaceName;
 
     if (category === "corridor") {
-      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "gray", color: "white", opacity: 1 });
     } else {
-      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "black", color: "white", opacity: 1 });
     }
 
     setEditSpaceModalOpen(false);
@@ -391,7 +394,6 @@ const EditFloorPlanPage = () => {
           type: "error",
           message: "Error submitting form",
           description: error.response.data.errors.message,
-          duration: 0,
         });
       } else {
         console.error(error);
@@ -399,7 +401,6 @@ const EditFloorPlanPage = () => {
           type: "error",
           message: "Error submitting form",
           description: "An unexpected error occurred.",
-          duration: 0,
         });
       }
     }
@@ -445,6 +446,12 @@ const EditFloorPlanPage = () => {
             }}
             ref={mapDivRef}
           />
+          <Button
+            size="large"
+            icon={<AimOutlined />}
+            className="absolute left-3 bottom-3 border-2 flex justify-center items-center"
+            onClick={() => mapLRef.current!.flyTo([0, 0])}
+          />
         </div>
         <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
           <div className="flex flex-col">
@@ -473,12 +480,39 @@ const EditFloorPlanPage = () => {
             onFinishFailed={onFinishFailed}
             disabled={isSubmitting || errorStatus}
           >
-            <Form.Item>
-              <Tooltip title="Display an image on the canvas to help with drawing. This image won't be saved.">
-                <Upload {...props}>
-                  <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
-                </Upload>
-              </Tooltip>
+            <Form.Item
+              label="Image Overlay"
+              tooltip={{
+                title:
+                  "Display an image on the canvas to help with drawing. This image won't be saved.",
+                icon: <InfoCircleOutlined />,
+              }}
+            >
+              <Card>
+                <div className="flex flex-col gap-5">
+                  <Tooltip title="Uploading a new image will replace the existing one">
+                    <Upload {...props}>
+                      <Button icon={<UploadOutlined />}>
+                        Upload New Image
+                      </Button>
+                    </Upload>
+                  </Tooltip>
+                  <div>
+                    <span>Opacity:</span>
+                    <Slider
+                      min={0}
+                      max={100}
+                      step={10}
+                      onChange={(value) => {
+                        overlayRef.current?.setOpacity(value / 100);
+                      }}
+                      defaultValue={100}
+                      marks={{ 0: "0", 100: "100%" }}
+                      disabled={baseImageUrl ? false : true}
+                    />
+                  </div>
+                </div>
+              </Card>
             </Form.Item>
             <Form.Item
               label="Floor Level"

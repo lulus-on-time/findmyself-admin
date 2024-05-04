@@ -6,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
 import { Alert, Button, Card, Form, message, notification } from "antd";
-import { QuestionCircleOutlined } from "@ant-design/icons";
+import { AimOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { accessPointIcon, spaceLabelIcon } from "@/components/icons/marker";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PAGE_ROUTES } from "@/config/constants";
@@ -96,8 +96,8 @@ const EditAccessPointPage = () => {
     if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
         crs: L.CRS.Simple,
-        minZoom: -10,
-        maxZoom: 10,
+        minZoom: -2,
+        maxZoom: 2,
       });
       map.zoomControl.setPosition("bottomright");
       map.fitBounds([
@@ -179,7 +179,10 @@ const EditAccessPointPage = () => {
             properties: {
               spaceId: feature.properties.spaceId,
               bssids: feature.properties.bssids,
-              description: feature.properties.description,
+              description:
+                feature.properties.description === "-"
+                  ? ""
+                  : feature.properties.description,
               id: feature.properties.id,
             },
             geometry: feature.geometry,
@@ -253,10 +256,7 @@ const EditAccessPointPage = () => {
       globalAp.current = apMarker;
       editApForm.setFieldsValue({
         location: `${spaceDict[apMarker!.feature!.properties.spaceId]}`,
-        description:
-          apMarker!.feature!.properties.description === "-"
-            ? ""
-            : apMarker!.feature!.properties.description,
+        description: apMarker!.feature!.properties.description,
         bssids: apMarker!.feature!.properties.bssids,
       });
       setEditApModalOpen(true);
@@ -317,7 +317,6 @@ const EditAccessPointPage = () => {
           type: "error",
           message: "Error submitting form",
           description: error.response.data.errors.message,
-          duration: 0,
         });
       } else {
         console.error(error);
@@ -325,7 +324,6 @@ const EditAccessPointPage = () => {
           type: "error",
           message: "Error submitting form",
           description: "An unexpected error occurred.",
-          duration: 0,
         });
       }
     }
@@ -371,6 +369,12 @@ const EditAccessPointPage = () => {
               background: "#F5F5F5",
             }}
             ref={mapDivRef}
+          />
+          <Button
+            size="large"
+            icon={<AimOutlined />}
+            className="absolute left-3 bottom-3 border-2 flex justify-center items-center"
+            onClick={() => mapLRef.current!.flyTo([0, 0])}
           />
         </div>
         <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
