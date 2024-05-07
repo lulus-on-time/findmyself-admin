@@ -7,6 +7,7 @@ import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
 import CustomLayout from "@/components/layout/CustomLayout";
 import {
+  AimOutlined,
   InfoCircleOutlined,
   QuestionCircleOutlined,
   UploadOutlined,
@@ -14,9 +15,11 @@ import {
 import {
   Alert,
   Button,
+  Card,
   Form,
   Input,
   InputNumber,
+  Slider,
   Tooltip,
   Upload,
   message,
@@ -65,6 +68,25 @@ const EditFloorPlanPage = () => {
   var floorPlanData: any = null;
   const [formValues, setFormValues] = useState<any>(null);
 
+  const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: any) => {
+      if (unsavedChanges) {
+        const confirmationMessage =
+          "Are you sure you want to leave? Your changes may not be saved.";
+        event.returnValue = confirmationMessage;
+        return confirmationMessage;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [unsavedChanges]);
+
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,8 +118,8 @@ const EditFloorPlanPage = () => {
     if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
         crs: L.CRS.Simple,
-        minZoom: -10,
-        maxZoom: 10,
+        minZoom: -5,
+        maxZoom: 5,
       });
       map.zoomControl.setPosition("bottomright");
       map.fitBounds([
@@ -110,9 +132,9 @@ const EditFloorPlanPage = () => {
       // @ts-ignore
       function onEachFeature(feature: any, layer: any) {
         if (feature.properties.category === "corridor") {
-          layer.setStyle({ fillColor: "lightblue", color: "white" });
+          layer.setStyle({ fillColor: "gray", color: "white" });
         } else {
-          layer.setStyle({ fillColor: "cadetblue", color: "white" });
+          layer.setStyle({ fillColor: "black", color: "white" });
         }
 
         var labelMarker = L.marker(feature.properties.poi, {
@@ -129,6 +151,7 @@ const EditFloorPlanPage = () => {
           }
           var poi = labelMarker.getLatLng();
           layer!.feature!.properties.poi = [poi.lat, poi.lng];
+          setUnsavedChanges(true);
         });
 
         labelMarker.on("dblclick", function () {
@@ -187,6 +210,7 @@ const EditFloorPlanPage = () => {
       });
 
       map.on("draw:deleted", function (e) {
+        setUnsavedChanges(true);
         // @ts-ignore
         var deletedLayers = e.layers;
         deletedLayers.eachLayer(function (layer: any) {
@@ -266,6 +290,8 @@ const EditFloorPlanPage = () => {
   };
 
   const createSpace = (values: any) => {
+    setUnsavedChanges(true);
+
     var category = values.category;
     var spaceName = values.spaceName;
 
@@ -311,9 +337,9 @@ const EditFloorPlanPage = () => {
     });
 
     if (category === "corridor") {
-      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "gray", color: "white", opacity: 1 });
     } else {
-      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "black", color: "white", opacity: 1 });
     }
 
     setCreateSpaceModalOpen(false);
@@ -321,6 +347,8 @@ const EditFloorPlanPage = () => {
   };
 
   const editSpace = (values: any) => {
+    setUnsavedChanges(true);
+
     var category = values.category;
     var spaceName = values.spaceName;
 
@@ -336,9 +364,9 @@ const EditFloorPlanPage = () => {
     layer!.feature!.properties.name = spaceName;
 
     if (category === "corridor") {
-      layer!.setStyle({ fillColor: "lightblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "gray", color: "white", opacity: 1 });
     } else {
-      layer!.setStyle({ fillColor: "cadetblue", color: "white", opacity: 1 });
+      layer!.setStyle({ fillColor: "black", color: "white", opacity: 1 });
     }
 
     setEditSpaceModalOpen(false);
@@ -377,6 +405,8 @@ const EditFloorPlanPage = () => {
     try {
       const response = await postEditFloorPlan(floorId, dataToSend);
       if (response.status === 200) {
+        setUnsavedChanges(false);
+
         router.push(PAGE_ROUTES.floorPlanList);
         notification.open({
           type: "success",
@@ -391,7 +421,6 @@ const EditFloorPlanPage = () => {
           type: "error",
           message: "Error submitting form",
           description: error.response.data.errors.message,
-          duration: 0,
         });
       } else {
         console.error(error);
@@ -399,7 +428,6 @@ const EditFloorPlanPage = () => {
           type: "error",
           message: "Error submitting form",
           description: "An unexpected error occurred.",
-          duration: 0,
         });
       }
     }
@@ -415,8 +443,8 @@ const EditFloorPlanPage = () => {
 
   return (
     <CustomLayout>
-      <div className="w-full flex flex-col md:flex-row">
-        <div className="w-full md:w-3/4">
+      <div className="w-full flex flex-col lg:flex-row">
+        <div className="w-full lg:w-3/4">
           {errorStatus && (
             <Alert
               message="Error fetching floor plan"
@@ -445,8 +473,14 @@ const EditFloorPlanPage = () => {
             }}
             ref={mapDivRef}
           />
+          <Button
+            size="large"
+            icon={<AimOutlined />}
+            className="absolute left-3 bottom-3 border-2 flex justify-center items-center"
+            onClick={() => mapLRef.current!.flyTo([0, 0], 0)}
+          />
         </div>
-        <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
+        <div className="w-full lg:w-1/4 lg:max-h-[88vh] p-5 flex flex-col gap-5 lg:overflow-auto">
           <div className="flex flex-col">
             <div className="flex justify-between items-center gap-5">
               <div className="flex items-center gap-3">
@@ -457,7 +491,7 @@ const EditFloorPlanPage = () => {
                 className="flex items-center p-0"
                 onClick={() => setTutorialModalOpen(true)}
               >
-                <span>Tutorial</span>
+                <span className="underline">Tutorial</span>
                 <QuestionCircleOutlined />
               </Button>
             </div>
@@ -473,12 +507,39 @@ const EditFloorPlanPage = () => {
             onFinishFailed={onFinishFailed}
             disabled={isSubmitting || errorStatus}
           >
-            <Form.Item>
-              <Tooltip title="Display an image on the canvas to help with drawing. This image won't be saved.">
-                <Upload {...props}>
-                  <Button icon={<UploadOutlined />}>Add Image Overlay</Button>
-                </Upload>
-              </Tooltip>
+            <Form.Item
+              label="Image Overlay"
+              tooltip={{
+                title:
+                  "Display an image on the canvas to help with drawing. This image won't be saved.",
+                icon: <InfoCircleOutlined />,
+              }}
+            >
+              <Card>
+                <div className="flex flex-col gap-5">
+                  <Tooltip title="Uploading a new image will replace the existing one">
+                    <Upload {...props}>
+                      <Button icon={<UploadOutlined />}>
+                        Upload New Image
+                      </Button>
+                    </Upload>
+                  </Tooltip>
+                  <div>
+                    <span>Opacity:</span>
+                    <Slider
+                      min={0}
+                      max={100}
+                      step={10}
+                      onChange={(value) => {
+                        overlayRef.current?.setOpacity(value / 100);
+                      }}
+                      defaultValue={100}
+                      marks={{ 0: "0", 100: "100%" }}
+                      disabled={baseImageUrl ? false : true}
+                    />
+                  </div>
+                </div>
+              </Card>
             </Form.Item>
             <Form.Item
               label="Floor Level"
@@ -490,7 +551,11 @@ const EditFloorPlanPage = () => {
               name="floorLevel"
               rules={[{ required: true, message: "Please enter Floor Level" }]}
             >
-              <InputNumber placeholder="0" className="w-full" />
+              <InputNumber
+                placeholder="0"
+                className="w-full"
+                onChange={() => setUnsavedChanges(true)}
+              />
             </Form.Item>
             <Form.Item
               label="Floor Name"
@@ -502,6 +567,7 @@ const EditFloorPlanPage = () => {
                 placeholder="Dasar"
                 className="w-full"
                 allowClear
+                onChange={() => setUnsavedChanges(true)}
               />
             </Form.Item>
             <Form.Item className="mt-10">

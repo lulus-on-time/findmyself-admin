@@ -2,7 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import CustomLayout from "@/components/layout/CustomLayout";
-import { Alert, Button, Table, TableColumnsType, notification } from "antd";
+import {
+  Alert,
+  Button,
+  Space,
+  Table,
+  TableColumnsType,
+  notification,
+} from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { PAGE_ROUTES } from "@/config/constants";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
@@ -38,26 +45,31 @@ const FloorPlanListPage = () => {
     {
       title: "Floor Name",
       dataIndex: "name",
-      render: (_, record) => (
-        <a href={`${PAGE_ROUTES.floorPlanDetail}?floorId=${record.key}`}>
-          Lantai {record.name}
-        </a>
-      ),
+      render: (_, record) => `Lantai ${record.name}`,
     },
     {
       title: "Action",
       render: (_, record) => (
-        <Button
-          type="link"
-          danger
-          className="p-0"
-          onClick={() => {
-            setFloorToDelete(record);
-            setDeleteModalOpen(true);
-          }}
-        >
-          Delete
-        </Button>
+        <Space size={"middle"}>
+          <a
+            href={`${PAGE_ROUTES.floorPlanDetail}?floorId=${record.key}`}
+            className="underline hover:underline focus:underline"
+          >
+            Edit
+          </a>
+          <span className="opacity-20">|</span>
+          <Button
+            type="link"
+            danger
+            className="p-0"
+            onClick={() => {
+              setFloorToDelete(record);
+              setDeleteModalOpen(true);
+            }}
+          >
+            <span className="underline">Delete</span>
+          </Button>
+        </Space>
       ),
       width: "20%",
     },

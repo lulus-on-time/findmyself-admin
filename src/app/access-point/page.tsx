@@ -76,16 +76,20 @@ const AccessPointListPage = () => {
       render: (_, record) => (record.description ? record.description : "-"),
     },
     {
-      title: "Action",
+      title: "Detail",
       render: (_, record) => (
         <Space size={"large"}>
           <a
             href={`${PAGE_ROUTES.accessPointDetail}?floorId=${record.floor.id}`}
+            className="underline hover:underline focus:underline"
           >
-            BSSID Data
+            BSSID
           </a>
-          |
-          <a href={`${PAGE_ROUTES.editAccessPoint}?floorId=${record.floor.id}`}>
+          <span className="opacity-20">|</span>
+          <a
+            href={`${PAGE_ROUTES.editAccessPoint}?floorId=${record.floor.id}`}
+            className="underline hover:underline focus:underline"
+          >
             Map
           </a>
         </Space>
