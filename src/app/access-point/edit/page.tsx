@@ -50,6 +50,25 @@ const EditAccessPointPage = () => {
   const [spaceDict] = useState<any>({});
   const [apData, setApData] = useState<any>([]);
 
+  const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: any) => {
+      if (unsavedChanges) {
+        const confirmationMessage =
+          "Are you sure you want to leave? Your changes may not be saved.";
+        event.returnValue = confirmationMessage;
+        return confirmationMessage;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [unsavedChanges]);
+
   useEffect(() => {
     fetchFPandAP();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,8 +115,8 @@ const EditAccessPointPage = () => {
     if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
         crs: L.CRS.Simple,
-        minZoom: -2,
-        maxZoom: 2,
+        minZoom: -5,
+        maxZoom: 5,
       });
       map.zoomControl.setPosition("bottomright");
       map.fitBounds([
@@ -112,9 +131,9 @@ const EditAccessPointPage = () => {
       // @ts-ignore
       function onEachFeature(feature: any, layer: any) {
         if (feature.properties.category === "corridor") {
-          layer.setStyle({ fillColor: "lightblue", color: "white" });
+          layer.setStyle({ fillColor: "gray", color: "white" });
         } else {
-          layer.setStyle({ fillColor: "cadetblue", color: "white" });
+          layer.setStyle({ fillColor: "black", color: "white" });
         }
 
         L.marker(feature.properties.poi, {
@@ -137,7 +156,10 @@ const EditAccessPointPage = () => {
             return;
           }
         });
-        if (insideFP) return true;
+        if (insideFP) {
+          setUnsavedChanges(true);
+          return true;
+        }
         if (isNew) {
           message.error("Access point must be inside the floor plan");
           return false;
@@ -246,6 +268,8 @@ const EditAccessPointPage = () => {
   };
 
   const createAp = (values: any) => {
+    setUnsavedChanges(true);
+
     var apMarker = globalAp.current;
     apMarker!.feature!.properties.description = values.description;
     apMarker!.feature!.properties.bssids = values.bssids;
@@ -267,6 +291,8 @@ const EditAccessPointPage = () => {
   };
 
   const editAp = (values: any) => {
+    setUnsavedChanges(true);
+
     var apMarker = globalAp.current;
     apMarker!.feature!.properties.description = values.description;
     apMarker!.feature!.properties.bssids = values.bssids;
@@ -277,6 +303,8 @@ const EditAccessPointPage = () => {
   };
 
   const deleteAp = () => {
+    setUnsavedChanges(true);
+
     editableLayers.current?.removeLayer(globalAp.current!);
     setEditApModalOpen(false);
     setApData(Object(editableLayers.current!.toGeoJSON()).features);
@@ -303,6 +331,7 @@ const EditAccessPointPage = () => {
     try {
       const response = await postEditAccessPoint(floorId, dataToSend);
       if (response.status === 200) {
+        setUnsavedChanges(false);
         router.push(`${PAGE_ROUTES.accessPointDetail}?floorId=${floorId}`);
         notification.open({
           type: "success",
@@ -335,8 +364,8 @@ const EditAccessPointPage = () => {
 
   return (
     <CustomLayout>
-      <div className="w-full flex flex-col md:flex-row">
-        <div className="w-full md:w-3/4">
+      <div className="w-full flex flex-col lg:flex-row">
+        <div className="w-full lg:w-3/4">
           {errorStatus && (
             <Alert
               message="Error fetching floor plan"
@@ -374,10 +403,10 @@ const EditAccessPointPage = () => {
             size="large"
             icon={<AimOutlined />}
             className="absolute left-3 bottom-3 border-2 flex justify-center items-center"
-            onClick={() => mapLRef.current!.flyTo([0, 0])}
+            onClick={() => mapLRef.current!.flyTo([0, 0], 0)}
           />
         </div>
-        <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
+        <div className="w-full lg:w-1/4 lg:max-h-[88vh] p-5 flex flex-col gap-5 lg:overflow-auto">
           <div className="flex flex-col">
             <div className="flex justify-between items-center gap-5">
               <div className="flex items-center gap-3">
@@ -388,7 +417,7 @@ const EditAccessPointPage = () => {
                 className="flex items-center p-0"
                 onClick={() => setTutorialModalOpen(true)}
               >
-                <span>Tutorial</span>
+                <span className="underline">Tutorial</span>
                 <QuestionCircleOutlined />
               </Button>
             </div>

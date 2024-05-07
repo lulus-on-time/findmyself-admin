@@ -57,13 +57,32 @@ const CreateFloorPlanPage = () => {
   const [createSpaceForm] = Form.useForm();
   const [editSpaceForm] = Form.useForm();
 
+  const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: any) => {
+      if (unsavedChanges) {
+        const confirmationMessage =
+          "Are you sure you want to leave? Your changes may not be saved.";
+        event.returnValue = confirmationMessage;
+        return confirmationMessage;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [unsavedChanges]);
+
   useEffect(() => {
     // @ts-ignore
     if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
         crs: L.CRS.Simple,
-        minZoom: -2,
-        maxZoom: 2,
+        minZoom: -5,
+        maxZoom: 5,
       });
       map.fitBounds([
         [0, 0],
@@ -186,6 +205,8 @@ const CreateFloorPlanPage = () => {
   };
 
   const createSpace = (values: any) => {
+    setUnsavedChanges(true);
+
     var category = values.category;
     var spaceName = values.spaceName;
 
@@ -288,6 +309,7 @@ const CreateFloorPlanPage = () => {
     try {
       const response = await postCreateFloorPlan(dataToSend);
       if (response.status === 200) {
+        setUnsavedChanges(false);
         router.push(PAGE_ROUTES.floorPlanList);
         notification.open({
           type: "success",
@@ -320,8 +342,8 @@ const CreateFloorPlanPage = () => {
 
   return (
     <CustomLayout>
-      <div className="w-full flex flex-col md:flex-row">
-        <div className="w-full md:w-3/4">
+      <div className="w-full flex flex-col lg:flex-row">
+        <div className="w-full lg:w-3/4">
           {deleteWarning && (
             <Alert
               type="warning"
@@ -344,10 +366,10 @@ const CreateFloorPlanPage = () => {
             size="large"
             icon={<AimOutlined />}
             className="absolute left-3 bottom-3 border-2 flex justify-center items-center"
-            onClick={() => mapLRef.current!.flyTo([0, 0])}
+            onClick={() => mapLRef.current!.flyTo([0, 0], 0)}
           />
         </div>
-        <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
+        <div className="w-full lg:w-1/4 lg:max-h-[88vh] p-5 flex flex-col gap-5 lg:overflow-auto">
           <div className="flex justify-between items-center gap-5">
             <h3>Create Floor Plan</h3>
             <Button
@@ -355,7 +377,7 @@ const CreateFloorPlanPage = () => {
               className="flex items-center p-0"
               onClick={() => setTutorialModalOpen(true)}
             >
-              <span>Tutorial</span>
+              <span className="underline">Tutorial</span>
               <QuestionCircleOutlined />
             </Button>
           </div>
@@ -410,7 +432,11 @@ const CreateFloorPlanPage = () => {
               name="floorLevel"
               rules={[{ required: true, message: "Please enter Floor Level" }]}
             >
-              <InputNumber placeholder="0" className="w-full" />
+              <InputNumber
+                placeholder="0"
+                className="w-full"
+                onChange={() => setUnsavedChanges(true)}
+              />
             </Form.Item>
             <Form.Item
               label="Floor Name"
@@ -422,6 +448,7 @@ const CreateFloorPlanPage = () => {
                 placeholder="Dasar"
                 className="w-full"
                 allowClear
+                onChange={() => setUnsavedChanges(true)}
               />
             </Form.Item>
             <Form.Item className="mt-10">

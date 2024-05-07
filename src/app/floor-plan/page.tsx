@@ -51,7 +51,10 @@ const FloorPlanListPage = () => {
       title: "Action",
       render: (_, record) => (
         <Space size={"middle"}>
-          <a href={`${PAGE_ROUTES.floorPlanDetail}?floorId=${record.key}`}>
+          <a
+            href={`${PAGE_ROUTES.floorPlanDetail}?floorId=${record.key}`}
+            className="underline hover:underline focus:underline"
+          >
             Edit
           </a>
           <span className="opacity-20">|</span>
@@ -64,7 +67,7 @@ const FloorPlanListPage = () => {
               setDeleteModalOpen(true);
             }}
           >
-            Delete
+            <span className="underline">Delete</span>
           </Button>
         </Space>
       ),
