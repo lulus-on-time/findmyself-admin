@@ -68,6 +68,25 @@ const EditFloorPlanPage = () => {
   var floorPlanData: any = null;
   const [formValues, setFormValues] = useState<any>(null);
 
+  const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: any) => {
+      if (unsavedChanges) {
+        const confirmationMessage =
+          "Are you sure you want to leave? Your changes may not be saved.";
+        event.returnValue = confirmationMessage;
+        return confirmationMessage;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [unsavedChanges]);
+
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -132,6 +151,7 @@ const EditFloorPlanPage = () => {
           }
           var poi = labelMarker.getLatLng();
           layer!.feature!.properties.poi = [poi.lat, poi.lng];
+          setUnsavedChanges(true);
         });
 
         labelMarker.on("dblclick", function () {
@@ -190,6 +210,7 @@ const EditFloorPlanPage = () => {
       });
 
       map.on("draw:deleted", function (e) {
+        setUnsavedChanges(true);
         // @ts-ignore
         var deletedLayers = e.layers;
         deletedLayers.eachLayer(function (layer: any) {
@@ -269,6 +290,8 @@ const EditFloorPlanPage = () => {
   };
 
   const createSpace = (values: any) => {
+    setUnsavedChanges(true);
+
     var category = values.category;
     var spaceName = values.spaceName;
 
@@ -324,6 +347,8 @@ const EditFloorPlanPage = () => {
   };
 
   const editSpace = (values: any) => {
+    setUnsavedChanges(true);
+
     var category = values.category;
     var spaceName = values.spaceName;
 
@@ -380,6 +405,8 @@ const EditFloorPlanPage = () => {
     try {
       const response = await postEditFloorPlan(floorId, dataToSend);
       if (response.status === 200) {
+        setUnsavedChanges(false);
+
         router.push(PAGE_ROUTES.floorPlanList);
         notification.open({
           type: "success",
@@ -453,7 +480,7 @@ const EditFloorPlanPage = () => {
             onClick={() => mapLRef.current!.flyTo([0, 0], 0)}
           />
         </div>
-        <div className="w-full lg:w-1/4 lg:max-h-[90vh] p-5 flex flex-col gap-5 lg:overflow-auto">
+        <div className="w-full lg:w-1/4 lg:max-h-[88vh] p-5 flex flex-col gap-5 lg:overflow-auto">
           <div className="flex flex-col">
             <div className="flex justify-between items-center gap-5">
               <div className="flex items-center gap-3">
@@ -524,7 +551,11 @@ const EditFloorPlanPage = () => {
               name="floorLevel"
               rules={[{ required: true, message: "Please enter Floor Level" }]}
             >
-              <InputNumber placeholder="0" className="w-full" />
+              <InputNumber
+                placeholder="0"
+                className="w-full"
+                onChange={() => setUnsavedChanges(true)}
+              />
             </Form.Item>
             <Form.Item
               label="Floor Name"
@@ -536,6 +567,7 @@ const EditFloorPlanPage = () => {
                 placeholder="Dasar"
                 className="w-full"
                 allowClear
+                onChange={() => setUnsavedChanges(true)}
               />
             </Form.Item>
             <Form.Item className="mt-10">
