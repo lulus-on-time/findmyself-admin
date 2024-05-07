@@ -47,12 +47,19 @@ const ApDetailModal = ({
 
   const columns: TableColumnsType<Network> = [
     {
+      title: "No",
+      dataIndex: "key",
+      width: "10%",
+    },
+    {
       title: "SSID",
       dataIndex: "ssid",
+      width: "40%",
     },
     {
       title: "BSSID",
       dataIndex: "bssid",
+      width: "50%",
     },
   ];
 
@@ -86,6 +93,7 @@ const ApDetailModal = ({
 
     setSelectedRowKeys([]);
     setSelectedNetwork([]);
+    setCurrentPage(1);
   };
 
   const cancelImport = () => {
@@ -94,6 +102,7 @@ const ApDetailModal = ({
 
     setSelectedRowKeys([]);
     setSelectedNetwork([]);
+    setCurrentPage(1);
   };
 
   const props: UploadProps = {
@@ -106,6 +115,7 @@ const ApDetailModal = ({
       if (file && onSuccess) {
         setSelectedRowKeys([]);
         setSelectedNetwork([]);
+        setCurrentPage(1);
 
         Papa.parse(file as string, {
           header: true,
@@ -119,7 +129,7 @@ const ApDetailModal = ({
               };
             });
             setImportedData(result);
-            // save to local storage
+            localStorage.setItem("importedBssids", JSON.stringify(result));
           },
         });
         setTimeout(() => {
@@ -170,6 +180,12 @@ const ApDetailModal = ({
                             onClick={() => {
                               setThisVisible(false);
                               setImportModalOpen(true);
+                              if (!importedData.length) {
+                                const importedBssids =
+                                  localStorage.getItem("importedBssids");
+                                if (importedBssids)
+                                  setImportedData(JSON.parse(importedBssids));
+                              }
                             }}
                           >
                             <span className="underline">Import</span>
@@ -262,7 +278,7 @@ const ApDetailModal = ({
       <Modal
         title="Imported SSID & BSSID"
         open={importModalOpen}
-        width={"90%"}
+        width={"75%"}
         onCancel={cancelImport}
         footer={[
           <Tooltip
@@ -308,10 +324,8 @@ const ApDetailModal = ({
           type="info"
           showIcon
           message={
-            <div className="flex gap-2">
-              <span>
-                {`CSV file must include 'SSID' and 'BSSID' in the header.`}
-              </span>
+            <span>
+              {`CSV file must include 'SSID' and 'BSSID' in the header. `}
               <a
                 target="_blank"
                 href="/csv/ssid-bssid-example.csv"
@@ -319,7 +333,7 @@ const ApDetailModal = ({
               >
                 Download an example here
               </a>
-            </div>
+            </span>
           }
         />
         <Table
@@ -330,6 +344,10 @@ const ApDetailModal = ({
           columns={columns}
           dataSource={importedData}
           className="mt-5"
+          pagination={{
+            current: currentPage,
+            onChange: (page) => setCurrentPage(page),
+          }}
         />
       </Modal>
     </div>

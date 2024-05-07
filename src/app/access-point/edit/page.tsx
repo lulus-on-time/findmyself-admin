@@ -96,8 +96,8 @@ const EditAccessPointPage = () => {
     if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
         crs: L.CRS.Simple,
-        minZoom: -2,
-        maxZoom: 2,
+        minZoom: -5,
+        maxZoom: 5,
       });
       map.zoomControl.setPosition("bottomright");
       map.fitBounds([
@@ -112,9 +112,9 @@ const EditAccessPointPage = () => {
       // @ts-ignore
       function onEachFeature(feature: any, layer: any) {
         if (feature.properties.category === "corridor") {
-          layer.setStyle({ fillColor: "lightblue", color: "white" });
+          layer.setStyle({ fillColor: "gray", color: "white" });
         } else {
-          layer.setStyle({ fillColor: "cadetblue", color: "white" });
+          layer.setStyle({ fillColor: "black", color: "white" });
         }
 
         L.marker(feature.properties.poi, {
@@ -335,8 +335,8 @@ const EditAccessPointPage = () => {
 
   return (
     <CustomLayout>
-      <div className="w-full flex flex-col md:flex-row">
-        <div className="w-full md:w-3/4">
+      <div className="w-full flex flex-col lg:flex-row">
+        <div className="w-full lg:w-3/4">
           {errorStatus && (
             <Alert
               message="Error fetching floor plan"
@@ -374,10 +374,10 @@ const EditAccessPointPage = () => {
             size="large"
             icon={<AimOutlined />}
             className="absolute left-3 bottom-3 border-2 flex justify-center items-center"
-            onClick={() => mapLRef.current!.flyTo([0, 0])}
+            onClick={() => mapLRef.current!.flyTo([0, 0], 0)}
           />
         </div>
-        <div className="w-full md:w-1/4 max-h-[90vh] p-5 flex flex-col gap-5 overflow-auto">
+        <div className="w-full lg:w-1/4 lg:max-h-[90vh] p-5 flex flex-col gap-5 lg:overflow-auto">
           <div className="flex flex-col">
             <div className="flex justify-between items-center gap-5">
               <div className="flex items-center gap-3">
