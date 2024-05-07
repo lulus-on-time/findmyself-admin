@@ -2,19 +2,25 @@
 
 import React, { useState } from "react";
 import {
+  Alert,
   Button,
+  ConfigProvider,
   Form,
   Input,
   Modal,
   Popconfirm,
   Table,
   TableColumnsType,
+  Tooltip,
+  Upload,
+  UploadProps,
 } from "antd";
 import {
   ImportOutlined,
   MinusCircleOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
+import Papa from "papaparse";
 
 interface Network {
   key: React.Key;
@@ -32,9 +38,12 @@ const ApDetailModal = ({
   onDelete,
   initialValues,
 }: any) => {
+  const [thisVisible, setThisVisible] = useState<boolean>(true);
   const [importModalOpen, setImportModalOpen] = useState<boolean>(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<any>([]);
   const [selectedNetwork, setSelectedNetwork] = useState<any>([]);
+  const [importedData, setImportedData] = useState<Network[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const columns: TableColumnsType<Network> = [
     {
@@ -58,30 +67,78 @@ const ApDetailModal = ({
     }),
   };
 
-  const importNetwork = () => {
+  const updateBssids = () => {
     var currentNetwork = form.getFieldValue("bssids");
     currentNetwork = currentNetwork[0] ? currentNetwork : [];
+
     var newNetwork = selectedNetwork.map((item: Network) => {
       return {
         ssid: item.ssid,
         bssid: item.bssid,
       };
     });
+
     var bssids = currentNetwork.concat(newNetwork);
     form.setFieldValue("bssids", bssids);
+
     setImportModalOpen(false);
+    setThisVisible(true);
+
     setSelectedRowKeys([]);
     setSelectedNetwork([]);
   };
 
   const cancelImport = () => {
     setImportModalOpen(false);
+    setThisVisible(true);
+
     setSelectedRowKeys([]);
+    setSelectedNetwork([]);
+  };
+
+  const props: UploadProps = {
+    name: "file",
+    accept: ".csv",
+    multiple: false,
+    maxCount: 1,
+    customRequest(options) {
+      const { file, onSuccess } = options;
+      if (file && onSuccess) {
+        setSelectedRowKeys([]);
+        setSelectedNetwork([]);
+
+        Papa.parse(file as string, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function (results) {
+            var result = results.data.map((item: any, key: number) => {
+              return {
+                key: key + 1,
+                ssid: item.SSID,
+                bssid: item.BSSID,
+              };
+            });
+            setImportedData(result);
+            // save to local storage
+          },
+        });
+        setTimeout(() => {
+          onSuccess("ok");
+        }, 0);
+      }
+    },
+    showUploadList: false,
   };
 
   return (
     <div>
-      <Modal title={title} open={open} onCancel={onCancel} footer={[]}>
+      <Modal
+        title={title}
+        open={open}
+        onCancel={onCancel}
+        footer={[]}
+        className={thisVisible ? "block" : "hidden"}
+      >
         <Form
           layout="vertical"
           className="mt-5"
@@ -110,9 +167,12 @@ const ApDetailModal = ({
                           <Button
                             type="link"
                             icon={<ImportOutlined />}
-                            onClick={() => setImportModalOpen(true)}
+                            onClick={() => {
+                              setThisVisible(false);
+                              setImportModalOpen(true);
+                            }}
                           >
-                            Import
+                            <span className="underline">Import</span>
                           </Button>
                         </div>
                       ) : (
@@ -205,29 +265,70 @@ const ApDetailModal = ({
         width={"90%"}
         onCancel={cancelImport}
         footer={[
-          <Button key="import" type="primary" danger>
-            Import New CSV
-          </Button>,
-          <Button key="cancel" onClick={cancelImport}>
+          <Tooltip
+            key={"import"}
+            title="Uploading a new CSV will replace the existing one"
+          >
+            <Upload {...props}>
+              <ConfigProvider
+                theme={{
+                  components: {
+                    Button: {
+                      colorPrimary: "#13C2C2",
+                      colorPrimaryHover: "#11ABAB",
+                      colorPrimaryActive: "#0F9191",
+                    },
+                  },
+                }}
+              >
+                <Button
+                  type="primary"
+                  icon={<ImportOutlined />}
+                  className="mr-2"
+                >
+                  Import New CSV
+                </Button>
+              </ConfigProvider>
+            </Upload>
+          </Tooltip>,
+          <Button key={"cancel"} onClick={cancelImport}>
             Cancel
           </Button>,
           <Button
-            key="ok"
+            key={"ok"}
             type="primary"
-            onClick={importNetwork}
+            onClick={updateBssids}
             disabled={!selectedRowKeys.length}
           >
             Ok
           </Button>,
         ]}
       >
+        <Alert
+          type="info"
+          showIcon
+          message={
+            <div className="flex gap-2">
+              <span>
+                {`CSV file must include 'SSID' and 'BSSID' in the header.`}
+              </span>
+              <a
+                target="_blank"
+                href="/csv/ssid-bssid-example.csv"
+                className="underline hover:underline focus:underline"
+              >
+                Download an example here
+              </a>
+            </div>
+          }
+        />
         <Table
           rowSelection={{
             type: "checkbox",
             ...rowSelection,
           }}
           columns={columns}
-          dataSource={data}
+          dataSource={importedData}
           className="mt-5"
         />
       </Modal>
@@ -236,61 +337,3 @@ const ApDetailModal = ({
 };
 
 export default ApDetailModal;
-
-const data: Network[] = [
-  {
-    key: 1,
-    ssid: "SSID 1",
-    bssid: "BSSID 1",
-  },
-  {
-    key: 2,
-    ssid: "SSID 2",
-    bssid: "BSSID 2",
-  },
-  {
-    key: 3,
-    ssid: "SSID 3",
-    bssid: "BSSID 3",
-  },
-  {
-    key: 4,
-    ssid: "SSID 4",
-    bssid: "BSSID 4",
-  },
-  {
-    key: 5,
-    ssid: "SSID 5",
-    bssid: "BSSID 5",
-  },
-  {
-    key: 6,
-    ssid: "SSID 6",
-    bssid: "BSSID 6",
-  },
-  {
-    key: 7,
-    ssid: "SSID 7",
-    bssid: "BSSID 7",
-  },
-  {
-    key: 8,
-    ssid: "SSID 8",
-    bssid: "BSSID 8",
-  },
-  {
-    key: 9,
-    ssid: "SSID 9",
-    bssid: "BSSID 9",
-  },
-  {
-    key: 10,
-    ssid: "SSID 10",
-    bssid: "BSSID 10",
-  },
-  {
-    key: 11,
-    ssid: "SSID 11",
-    bssid: "BSSID 11",
-  },
-];

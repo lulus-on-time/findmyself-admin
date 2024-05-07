@@ -464,7 +464,7 @@ const EditFloorPlanPage = () => {
                 className="flex items-center p-0"
                 onClick={() => setTutorialModalOpen(true)}
               >
-                <span>Tutorial</span>
+                <span className="underline">Tutorial</span>
                 <QuestionCircleOutlined />
               </Button>
             </div>

@@ -81,11 +81,15 @@ const AccessPointListPage = () => {
         <Space size={"large"}>
           <a
             href={`${PAGE_ROUTES.accessPointDetail}?floorId=${record.floor.id}`}
+            className="underline hover:underline focus:underline"
           >
             BSSID
           </a>
           <span className="opacity-20">|</span>
-          <a href={`${PAGE_ROUTES.editAccessPoint}?floorId=${record.floor.id}`}>
+          <a
+            href={`${PAGE_ROUTES.editAccessPoint}?floorId=${record.floor.id}`}
+            className="underline hover:underline focus:underline"
+          >
             Map
           </a>
         </Space>
