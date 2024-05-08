@@ -110,7 +110,7 @@ const CreateFloorPlanPage = () => {
         },
         edit: {
           featureGroup: editableLayers.current,
-          remove: true,
+          remove: false,
           edit: false,
         },
       });
@@ -126,15 +126,6 @@ const CreateFloorPlanPage = () => {
         editableLayers.current!.addLayer(layer!);
 
         setCreateSpaceModalOpen(true);
-      });
-
-      map.on("draw:deleted", function (e) {
-        // @ts-ignore
-        var deletedLayers = e.layers;
-        deletedLayers.eachLayer(function (layer: any) {
-          map.removeLayer(labelMarkersDict[layer._leaflet_id]);
-          delete labelMarkersDict[layer._leaflet_id];
-        });
       });
 
       map.on("draw:deletestart", function () {
@@ -291,6 +282,18 @@ const CreateFloorPlanPage = () => {
   const cancelEditSpace = () => {
     setEditSpaceModalOpen(false);
     editSpaceForm.resetFields();
+  };
+
+  const deleteSpace = () => {
+    var map = mapLRef.current;
+    var layer = globalLayer.current;
+    //@ts-ignore
+    map!.removeLayer(labelMarkersDict[layer._leaflet_id]);
+    //@ts-ignore
+    delete labelMarkersDict[layer._leaflet_id];
+    editableLayers.current!.removeLayer(layer!);
+
+    setEditSpaceModalOpen(false);
   };
 
   const onFinish = async (values: any) => {
@@ -485,6 +488,7 @@ const CreateFloorPlanPage = () => {
         onFinish={editSpace}
         onFinishFailed={onFinishFailed}
         categoryValue={categoryValue}
+        onDelete={deleteSpace}
       />
 
       <FpTutorialModal

@@ -191,7 +191,7 @@ const EditFloorPlanPage = () => {
         },
         edit: {
           featureGroup: editableLayers.current,
-          remove: true,
+          remove: false,
           edit: false,
         },
       });
@@ -207,21 +207,6 @@ const EditFloorPlanPage = () => {
         editableLayers.current!.addLayer(layer!);
 
         setCreateSpaceModalOpen(true);
-      });
-
-      map.on("draw:deleted", function (e) {
-        setUnsavedChanges(true);
-        // @ts-ignore
-        var deletedLayers = e.layers;
-        deletedLayers.eachLayer(function (layer: any) {
-          if (layer.feature.properties.id) {
-            map.removeLayer(labelMarkersDict[layer.feature.properties.id]);
-            delete labelMarkersDict[layer.feature.properties.id];
-          } else {
-            map.removeLayer(labelMarkersDict[layer._leaflet_id]);
-            delete labelMarkersDict[layer._leaflet_id];
-          }
-        });
       });
 
       map.on("draw:deletestart", function () {
@@ -382,6 +367,25 @@ const EditFloorPlanPage = () => {
   const cancelEditSpace = () => {
     setEditSpaceModalOpen(false);
     editSpaceForm.resetFields();
+  };
+
+  const deleteSpace = () => {
+    setUnsavedChanges(true);
+
+    var map = mapLRef.current;
+    var layer = globalLayer.current;
+    if (layer!.feature!.properties.id) {
+      map!.removeLayer(labelMarkersDict[layer!.feature!.properties.id]);
+      delete labelMarkersDict[layer!.feature!.properties.id];
+    } else {
+      // @ts-ignore
+      map!.removeLayer(labelMarkersDict[layer._leaflet_id]);
+      // @ts-ignore
+      delete labelMarkersDict[layer._leaflet_id];
+    }
+    editableLayers.current!.removeLayer(layer!);
+
+    setEditSpaceModalOpen(false);
   };
 
   const onFinish = (values: any) => {
@@ -599,6 +603,8 @@ const EditFloorPlanPage = () => {
         onFinish={editSpace}
         onFinishFailed={onFinishFailed}
         categoryValue={categoryValue}
+        onDelete={deleteSpace}
+        edit
       />
 
       <FpTutorialModal

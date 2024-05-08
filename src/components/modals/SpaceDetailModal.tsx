@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Button, Form, Input, Modal, Radio } from "antd";
+import { Button, Form, Input, Modal, Popconfirm, Radio } from "antd";
 
 const SpaceDetailModal = ({
   title,
@@ -12,6 +12,8 @@ const SpaceDetailModal = ({
   onFinish,
   onFinishFailed,
   categoryValue,
+  onDelete,
+  edit,
 }: any) => {
   return (
     <Modal title={title} open={open} onCancel={onCancel} footer={[]}>
@@ -34,6 +36,32 @@ const SpaceDetailModal = ({
         </Form.Item>
         <Form.Item className="w-full flex justify-end">
           <div className="flex gap-2">
+            {onDelete && (
+              <Popconfirm
+                title={edit ? "Warning" : "Delete Space"}
+                description={
+                  <span className="pr-20">
+                    {edit && (
+                      <b className="text-red-500">
+                        Deleting a room will also remove all <br />
+                        access points within that room.
+                        <br />
+                      </b>
+                    )}
+                    Are you sure to delete this space? <br />
+                    This action cannot be undone.
+                  </span>
+                }
+                onConfirm={onDelete}
+                okText="Yes"
+                okButtonProps={{ danger: true }}
+                cancelText="No"
+              >
+                <Button type="primary" danger>
+                  Delete Space
+                </Button>
+              </Popconfirm>
+            )}
             <Button onClick={onCancel}>Cancel</Button>
             <Button type="primary" htmlType="submit">
               Ok
