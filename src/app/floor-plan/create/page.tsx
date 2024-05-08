@@ -81,8 +81,8 @@ const CreateFloorPlanPage = () => {
     if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
         crs: L.CRS.Simple,
-        minZoom: -5,
-        maxZoom: 5,
+        minZoom: -2,
+        maxZoom: 1,
       });
       map.fitBounds([
         [0, 0],
@@ -365,11 +365,11 @@ const CreateFloorPlanPage = () => {
           <Button
             size="large"
             icon={<AimOutlined />}
-            className="absolute left-3 bottom-3 border-2 flex justify-center items-center"
+            className="fixed left-3 bottom-3 border-2 flex justify-center items-center"
             onClick={() => mapLRef.current!.flyTo([0, 0], 0)}
           />
         </div>
-        <div className="w-full lg:w-1/4 lg:max-h-[88vh] p-5 flex flex-col gap-5 lg:overflow-auto">
+        <div className="w-full lg:w-1/4 lg:max-h-[88vh] p-5 flex flex-col gap-5 lg:overflow-auto bg-white z-10">
           <div className="flex justify-between items-center gap-5">
             <h3>Create Floor Plan</h3>
             <Button
