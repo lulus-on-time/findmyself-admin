@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import L from "leaflet";
+import L, { LatLng } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
@@ -81,8 +81,8 @@ const CreateFloorPlanPage = () => {
     if (mapDivRef.current && !mapDivRef.current._leaflet_id) {
       var map = L.map("map", {
         crs: L.CRS.Simple,
-        minZoom: -5,
-        maxZoom: 5,
+        minZoom: -2,
+        maxZoom: 1,
       });
       map.fitBounds([
         [0, 0],
@@ -110,7 +110,7 @@ const CreateFloorPlanPage = () => {
         },
         edit: {
           featureGroup: editableLayers.current,
-          remove: true,
+          remove: false,
           edit: false,
         },
       });
@@ -126,15 +126,6 @@ const CreateFloorPlanPage = () => {
         editableLayers.current!.addLayer(layer!);
 
         setCreateSpaceModalOpen(true);
-      });
-
-      map.on("draw:deleted", function (e) {
-        // @ts-ignore
-        var deletedLayers = e.layers;
-        deletedLayers.eachLayer(function (layer: any) {
-          map.removeLayer(labelMarkersDict[layer._leaflet_id]);
-          delete labelMarkersDict[layer._leaflet_id];
-        });
       });
 
       map.on("draw:deletestart", function () {
@@ -217,7 +208,14 @@ const CreateFloorPlanPage = () => {
     var labelMarker = L.marker(poi, {
       draggable: true,
       icon: spaceLabelIcon(spaceName),
-    }).addTo(map!);
+    });
+    if (!isMarkerInsidePolygon(labelMarker, layer)) {
+      var reversedPoi = (layer as L.Polygon).toGeoJSON().geometry
+        .coordinates[0][0] as number[];
+      poi = new LatLng(reversedPoi[1], reversedPoi[0]);
+      labelMarker.setLatLng(poi);
+    }
+    labelMarker.addTo(map!);
     // @ts-ignore
     labelMarkersDict[layer._leaflet_id] = labelMarker;
 
@@ -293,6 +291,18 @@ const CreateFloorPlanPage = () => {
     editSpaceForm.resetFields();
   };
 
+  const deleteSpace = () => {
+    var map = mapLRef.current;
+    var layer = globalLayer.current;
+    //@ts-ignore
+    map!.removeLayer(labelMarkersDict[layer._leaflet_id]);
+    //@ts-ignore
+    delete labelMarkersDict[layer._leaflet_id];
+    editableLayers.current!.removeLayer(layer!);
+
+    setEditSpaceModalOpen(false);
+  };
+
   const onFinish = async (values: any) => {
     setIsLoading(true);
     const dataToSend = Object.assign(
@@ -365,11 +375,11 @@ const CreateFloorPlanPage = () => {
           <Button
             size="large"
             icon={<AimOutlined />}
-            className="absolute left-3 bottom-3 border-2 flex justify-center items-center"
+            className="fixed left-3 bottom-3 border-2 flex justify-center items-center"
             onClick={() => mapLRef.current!.flyTo([0, 0], 0)}
           />
         </div>
-        <div className="w-full lg:w-1/4 lg:max-h-[88vh] p-5 flex flex-col gap-5 lg:overflow-auto">
+        <div className="w-full lg:w-1/4 lg:max-h-[88vh] p-5 flex flex-col gap-5 lg:overflow-auto bg-white z-10">
           <div className="flex justify-between items-center gap-5">
             <h3>Create Floor Plan</h3>
             <Button
@@ -485,11 +495,11 @@ const CreateFloorPlanPage = () => {
         onFinish={editSpace}
         onFinishFailed={onFinishFailed}
         categoryValue={categoryValue}
+        onDelete={deleteSpace}
       />
 
       <FpTutorialModal
         open={tutorialModalOpen}
-        onOk={() => setTutorialModalOpen(false)}
         onCancel={() => setTutorialModalOpen(false)}
       />
     </CustomLayout>
