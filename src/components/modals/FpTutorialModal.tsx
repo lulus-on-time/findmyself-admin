@@ -43,7 +43,7 @@ const FpTutorialModal = ({ open, onCancel, ...props }: any) => {
         <div className="flex flex-col">
           <div className="w-full flex justify-center bg-[#e5e5e5] mb-3">
             <Image
-              alt="Upload New Image Button"
+              alt="Image Opacity Slider"
               src={"/images/opacity-slider.png"}
               width={445}
               height={335}
@@ -68,7 +68,7 @@ const FpTutorialModal = ({ open, onCancel, ...props }: any) => {
         <div className="flex flex-col">
           <div className="w-full flex justify-center bg-[#e5e5e5] mb-3">
             <Image
-              alt="Upload New Image Button"
+              alt="Drawing Toolbar"
               src={"/images/create-spaces.png"}
               width={422}
               height={286}
@@ -101,8 +101,8 @@ const FpTutorialModal = ({ open, onCancel, ...props }: any) => {
         <div className="flex flex-col">
           <div className="w-full flex justify-center bg-[#e5e5e5] mb-3">
             <Image
-              alt="Upload New Image Button"
-              src={"/images/create-spaces.png"}
+              alt="Drag POI Marker"
+              src={"/images/change-poi.png"}
               width={422}
               height={286}
               className="w-1/2 h-auto"
@@ -113,9 +113,32 @@ const FpTutorialModal = ({ open, onCancel, ...props }: any) => {
               Drag the label marker to any desired location within the space
             </b>
             <br />
-            {`Marker denotes the point of interest. For example, on
-            the Android app, the user's location indicator will appear at this
-            point when they're in that room.`}
+            {`Label marker represents the point of interest. Ensure the marker stays within the space boundary.`}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "5",
+      label: "Renaming, Changing Space Type, or Deleting Space",
+      children: (
+        <div className="flex flex-col">
+          <div className="w-full flex justify-center bg-[#e5e5e5] mb-3">
+            <Image
+              alt="Double click on POI Marker"
+              src={"/images/edit-space.png"}
+              width={422}
+              height={286}
+              className="w-1/2 h-auto"
+            />
+          </div>
+          <span>
+            <b>Double-click on the label marker</b>
+            <ul>
+              <li>To rename or change space type, edit the form.</li>
+              <li>To delete the space, click the delete button.</li>
+            </ul>
+            Please note that actions cannot be undone. Proceed with caution.
           </span>
         </div>
       ),
