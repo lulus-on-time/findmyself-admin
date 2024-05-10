@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import L from "leaflet";
+import L, { LatLng } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
@@ -287,7 +287,14 @@ const EditFloorPlanPage = () => {
     var labelMarker = L.marker(poi, {
       draggable: true,
       icon: spaceLabelIcon(spaceName),
-    }).addTo(map!);
+    });
+    if (!isMarkerInsidePolygon(labelMarker, layer)) {
+      var reversedPoi = (layer as L.Polygon).toGeoJSON().geometry
+        .coordinates[0][0] as number[];
+      poi = new LatLng(reversedPoi[1], reversedPoi[0]);
+      labelMarker.setLatLng(poi);
+    }
+    labelMarker.addTo(map!);
     // @ts-ignore
     labelMarkersDict[layer._leaflet_id] = labelMarker;
 
@@ -609,7 +616,6 @@ const EditFloorPlanPage = () => {
 
       <FpTutorialModal
         open={tutorialModalOpen}
-        onOk={() => setTutorialModalOpen(false)}
         onCancel={() => setTutorialModalOpen(false)}
       />
 
