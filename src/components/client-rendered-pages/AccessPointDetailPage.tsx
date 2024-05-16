@@ -56,7 +56,7 @@ const AccessPointDetailPage = () => {
       width: "25%",
     },
     {
-      title: "Total BSSID",
+      title: "Total of Networks",
       dataIndex: "bssidTotal",
       render: (_, record) => record.apInfo.bssidTotal,
       onCell: (record, index) => ({
@@ -114,31 +114,31 @@ const AccessPointDetailPage = () => {
   }
 
   return (
-      <div className="p-10 flex flex-col gap-10">
-        {errorStatus && (
-          <Alert
-            type="error"
-            showIcon
-            message="Error fetching data"
-            description={errorMessage}
-          />
-        )}
-        <div className="flex flex-col md:flex-row gap-5 justify-between md:items-center">
-          <h2 className="m-0">Access Point Detail - Lantai {floorName}</h2>
-          <Button
-            type="primary"
-            href={`${PAGE_ROUTES.editAccessPoint}?floorId=${floorId}`}
-          >
-            View/Edit AP on Floor Plan
-          </Button>
-        </div>
-        <Table
-          columns={columns}
-          dataSource={apDetailData}
-          bordered
-          pagination={false}
+    <div className="p-10 flex flex-col gap-10">
+      {errorStatus && (
+        <Alert
+          type="error"
+          showIcon
+          message="Error fetching data"
+          description={errorMessage}
         />
+      )}
+      <div className="flex flex-col md:flex-row gap-5 justify-between md:items-center">
+        <h2 className="m-0">Access Point Detail - Lantai {floorName}</h2>
+        <Button
+          type="primary"
+          href={`${PAGE_ROUTES.editAccessPoint}?floorId=${floorId}`}
+        >
+          View/Edit AP on Floor Plan
+        </Button>
       </div>
+      <Table
+        columns={columns}
+        dataSource={apDetailData}
+        bordered
+        pagination={false}
+      />
+    </div>
   );
 };
 

@@ -167,11 +167,11 @@ const EditFloorPlanPage = () => {
           setEditSpaceModalOpen(true);
           editSpaceForm.setFieldValue(
             "category",
-            layer!.feature!.properties.category
+            layer!.feature!.properties.category,
           );
           editSpaceForm.setFieldValue(
             "spaceName",
-            layer!.feature!.properties.name
+            layer!.feature!.properties.name,
           );
         });
 
@@ -331,7 +331,7 @@ const EditFloorPlanPage = () => {
       setEditSpaceModalOpen(true);
       editSpaceForm.setFieldValue(
         "category",
-        layer!.feature!.properties.category
+        layer!.feature!.properties.category,
       );
       editSpaceForm.setFieldValue("spaceName", layer!.feature!.properties.name);
     });
@@ -418,7 +418,7 @@ const EditFloorPlanPage = () => {
           name: values.floorName,
         },
       },
-      editableLayers.current?.toGeoJSON()
+      editableLayers.current?.toGeoJSON(),
     );
 
     try {
@@ -435,11 +435,11 @@ const EditFloorPlanPage = () => {
       }
     } catch (error: any) {
       setIsSubmitting(false);
-      if (error.response?.data?.errors?.message) {
+      if (error.response?.data?.error?.message) {
         notification.open({
           type: "error",
           message: "Error submitting form",
-          description: error.response.data.errors.message,
+          description: error.response.data.error.message,
         });
       } else {
         console.error(error);

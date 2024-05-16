@@ -257,7 +257,7 @@ const EditAccessPointPage = () => {
 
           createApForm.setFieldValue(
             "location",
-            spaceDict[apMarker.feature.properties.spaceId]
+            spaceDict[apMarker.feature.properties.spaceId],
           );
           setCreateApModalOpen(true);
         }
@@ -345,11 +345,11 @@ const EditAccessPointPage = () => {
       }
     } catch (error: any) {
       setIsSubmitting(false);
-      if (error.response?.data?.errors?.message) {
+      if (error.response?.data?.error?.message) {
         notification.open({
           type: "error",
           message: "Error submitting form",
-          description: error.response.data.errors.message,
+          description: error.response.data.error.message,
         });
       } else {
         console.error(error);
