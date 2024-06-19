@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import CustomLayout from "@/components/layout/CustomLayout";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import { PAGE_ROUTES } from "@/config/constants";
 import { Alert, Button, Table, TableColumnsType } from "antd";
-import { ApDetailDataType } from "../type";
 import { getAccessPointDetail } from "@/services/accessPoint";
+import CustomLayout from "@/components/layout/CustomLayout";
+import { ApDetailDataType } from "../type";
 
 const AccessPointDetailPage = () => {
   const searchParams = useSearchParams();
@@ -56,7 +56,7 @@ const AccessPointDetailPage = () => {
       width: "25%",
     },
     {
-      title: "Total BSSID",
+      title: "Total of Networks",
       dataIndex: "bssidTotal",
       render: (_, record) => record.apInfo.bssidTotal,
       onCell: (record, index) => ({

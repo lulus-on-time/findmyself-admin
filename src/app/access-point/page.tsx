@@ -52,7 +52,7 @@ const AccessPointListPage = () => {
       width: "17.5%",
     },
     {
-      title: "Total AP",
+      title: "Total of APs",
       dataIndex: "apTotal",
       render: (_, record) => record.floor.apTotal,
       onCell: (record, index) => ({
@@ -83,7 +83,7 @@ const AccessPointListPage = () => {
             href={`${PAGE_ROUTES.accessPointDetail}?floorId=${record.floor.id}`}
             className="underline hover:underline focus:underline"
           >
-            BSSID
+            Networks
           </a>
           <span className="opacity-20">|</span>
           <a

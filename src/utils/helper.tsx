@@ -1,5 +1,6 @@
 import L from "leaflet";
 
+// source: https://stackoverflow.com/questions/31790344/determine-if-a-point-reside-inside-a-leaflet-polygon
 export function isMarkerInsidePolygon(marker: L.Marker, poly: any) {
   var inside = false;
   var x = marker.getLatLng().lat,
