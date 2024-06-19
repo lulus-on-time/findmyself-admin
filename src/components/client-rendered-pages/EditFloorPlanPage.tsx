@@ -5,7 +5,6 @@ import L, { LatLng } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
-import CustomLayout from "@/components/layout/CustomLayout";
 import {
   AimOutlined,
   InfoCircleOutlined,
@@ -40,6 +39,7 @@ import { isMarkerInsidePolygon } from "@/utils/helper";
 const EditFloorPlanPage = () => {
   const floorId = useSearchParams().get("floorId");
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState<boolean>(false);
   // Map
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapLRef = useRef<L.Map | null>(null);
@@ -47,14 +47,15 @@ const EditFloorPlanPage = () => {
   const editableLayers = useRef<L.FeatureGroup | null>(null);
   const globalLayer = useRef<L.Polygon | null>(null);
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
-  const [categoryValue] = useState("room");
+  const [categoryValue] = useState<string>("room");
   const [labelMarkersDict] = useState<LabelMarkers>({});
   const [deleteWarning, setDeleteWarning] = useState<boolean>(false);
   // Modal
-  const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
-  const [createSpaceModalOpen, setCreateSpaceModalOpen] = useState(false);
-  const [editSpaceModalOpen, setEditSpaceModalOpen] = useState(false);
-  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [tutorialModalOpen, setTutorialModalOpen] = useState<boolean>(false);
+  const [createSpaceModalOpen, setCreateSpaceModalOpen] =
+    useState<boolean>(false);
+  const [editSpaceModalOpen, setEditSpaceModalOpen] = useState<boolean>(false);
+  const [saveModalOpen, setSaveModalOpen] = useState<boolean>(false);
   // Form
   const [createSpaceForm] = Form.useForm();
   const [editSpaceForm] = Form.useForm();
@@ -65,12 +66,9 @@ const EditFloorPlanPage = () => {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   // Data
-  var floorPlanData: any = null;
   const [formValues, setFormValues] = useState<any>(null);
-
+  const [floorPlanData, setFloorPlanData] = useState<any>(null);
   const [unsavedChanges, setUnsavedChanges] = useState<boolean>(false);
-
-  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   useEffect(() => {
     const handleBeforeUnload = (event: any) => {
@@ -90,9 +88,11 @@ const EditFloorPlanPage = () => {
   }, [unsavedChanges]);
 
   useEffect(() => {
-    fetchData();
+    if (!isMounted && mapDivRef.current) {
+      setIsMounted(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mapDivRef.current]);
 
   useEffect(() => {
     fetchData();
@@ -103,8 +103,7 @@ const EditFloorPlanPage = () => {
     setIsFetching(true);
     try {
       const response = await getFloorPlanDetail(floorId);
-      floorPlanData = response.data;
-      initMap();
+      setFloorPlanData(response.data);
       setIsFetching(false);
     } catch (error: any) {
       setErrorStatus(true);
@@ -117,8 +116,12 @@ const EditFloorPlanPage = () => {
     }
   };
 
+  useEffect(() => {
+    if (isMounted && floorPlanData) initMap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMounted, floorPlanData]);
+
   const initMap = () => {
-    console.log("HELLO");
     floorPlanForm.setFieldValue("floorLevel", floorPlanData.floor.level);
     floorPlanForm.setFieldValue("floorName", floorPlanData.floor.name);
 

@@ -7,13 +7,10 @@ const CreateFloorPlanPage = () => {
   const CreateFloorPlanPageNoSsr = useMemo(
     () =>
       dynamic(
-        () =>
-          import(
-            "../../../components/client-rendered-pages/CreateFloorPlanPage"
-          ),
-        { ssr: false }
+        () => import("@/components/client-rendered-pages/CreateFloorPlanPage"),
+        { ssr: false },
       ),
-    []
+    [],
   );
   return (
     <CustomLayout>

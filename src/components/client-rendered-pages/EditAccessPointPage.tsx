@@ -11,7 +11,6 @@ import { accessPointIcon, spaceLabelIcon } from "@/components/icons/marker";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PAGE_ROUTES } from "@/config/constants";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
-import CustomLayout from "@/components/layout/CustomLayout";
 import ApTutorialModal from "@/components/modals/ApTutorialModal";
 import ApDetailModal from "@/components/modals/ApDetailModal";
 import ConfirmationModal from "@/components/modals/ConfirmationModal";
@@ -25,6 +24,7 @@ import { isMarkerInsidePolygon } from "@/utils/helper";
 const EditAccessPointPage = () => {
   const floorId = useSearchParams().get("floorId");
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState<boolean>(false);
   // useRef
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapLRef = useRef<L.Map | null>(null);
@@ -44,8 +44,8 @@ const EditAccessPointPage = () => {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   // Data
-  var floorPlanData: any = null;
-  var fetchedApData: any = null;
+  const [floorPlanData, setFloorPlanData] = useState<any>(null);
+  const [fetchedApData, setFetchedApData] = useState<any>(null);
   const [floorName, setFloorName] = useState<string>("");
   const [spaceDict] = useState<any>({});
   const [apData, setApData] = useState<any>([]);
@@ -70,9 +70,12 @@ const EditAccessPointPage = () => {
   }, [unsavedChanges]);
 
   useEffect(() => {
-    fetchFPandAP();
+    if (!isMounted && mapDivRef.current) {
+      setIsMounted(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mapDivRef.current]);
+
   useEffect(() => {
     fetchFPandAP();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,7 +86,7 @@ const EditAccessPointPage = () => {
 
     try {
       const fpResponse = await getFloorPlanDetail(floorId);
-      floorPlanData = fpResponse.data;
+      setFloorPlanData(fpResponse.data);
     } catch (error: any) {
       setErrorStatus(true);
       if (error.response?.data?.error?.message) {
@@ -97,7 +100,7 @@ const EditAccessPointPage = () => {
 
     try {
       const apResponse = await getAccessPointGeoJSON(floorId);
-      fetchedApData = apResponse.data;
+      setFetchedApData(apResponse.data);
       setFloorName(apResponse.data.floor.name);
     } catch (error: any) {
       setErrorStatus(true);
@@ -110,9 +113,13 @@ const EditAccessPointPage = () => {
       return;
     }
 
-    initMap();
     setIsFetching(false);
   };
+
+  useEffect(() => {
+    if (isMounted && floorPlanData && fetchedApData) initMap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMounted, floorPlanData, fetchedApData]);
 
   const initMap = () => {
     // @ts-ignore

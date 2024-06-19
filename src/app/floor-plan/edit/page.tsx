@@ -8,11 +8,10 @@ const EditFloorPlanPage = () => {
   const EditFloorPlanPageNoSsr = useMemo(
     () =>
       dynamic(
-        () =>
-          import("../../../components/client-rendered-pages/EditFloorPlanPage"),
-        { ssr: false }
+        () => import("@/components/client-rendered-pages/EditFloorPlanPage"),
+        { ssr: false },
       ),
-    []
+    [],
   );
   return (
     <CustomLayout>

@@ -1,19 +1,16 @@
 "use-client";
 import CustomLayout from "@/components/layout/CustomLayout";
 import dynamic from "next/dynamic";
-import { use, useMemo } from "react";
+import { useMemo } from "react";
 
 const EditAccessPointPage = () => {
   const EditAccessPointPageNoSsr = useMemo(
     () =>
       dynamic(
-        () =>
-          import(
-            "../../../components/client-rendered-pages/EditAccessPointPage"
-          ),
-        { ssr: false }
+        () => import("@/components/client-rendered-pages/EditAccessPointPage"),
+        { ssr: false },
       ),
-    []
+    [],
   );
 
   return (

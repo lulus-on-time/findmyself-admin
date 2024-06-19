@@ -1,4 +1,4 @@
-const BASE_URL = "http://35.219.115.59";
+const BASE_URL = `${process.env.NEXT_PUBLIC_BASE_URL}`;
 
 // ========== API ROUTES ==========
 

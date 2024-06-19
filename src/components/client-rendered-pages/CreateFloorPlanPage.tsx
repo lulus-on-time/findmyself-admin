@@ -5,7 +5,6 @@ import L, { LatLng } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw";
 import "leaflet-draw/dist/leaflet.draw-src.css";
-import CustomLayout from "@/components/layout/CustomLayout";
 import {
   AimOutlined,
   InfoCircleOutlined,
@@ -177,8 +176,6 @@ const CreateFloorPlanPage = () => {
     }
   }, [baseImageUrl]);
 
-  useEffect(() => {}, []);
-
   const props: UploadProps = {
     name: "file",
     accept: ".png, .jpg, .jpeg, .webp, .svg",
@@ -315,7 +312,7 @@ const CreateFloorPlanPage = () => {
           name: values.floorName,
         },
       },
-      editableLayers.current?.toGeoJSON()
+      editableLayers.current?.toGeoJSON(),
     );
 
     try {
