@@ -49,7 +49,6 @@ const EditFloorPlanPage = () => {
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
   const [categoryValue] = useState<string>("room");
   const [labelMarkersDict] = useState<LabelMarkers>({});
-  const [deleteWarning, setDeleteWarning] = useState<boolean>(false);
   // Modal
   const [tutorialModalOpen, setTutorialModalOpen] = useState<boolean>(false);
   const [createSpaceModalOpen, setCreateSpaceModalOpen] =
@@ -218,14 +217,6 @@ const EditFloorPlanPage = () => {
         editableLayers.current!.addLayer(layer!);
 
         setCreateSpaceModalOpen(true);
-      });
-
-      map.on("draw:deletestart", function () {
-        setDeleteWarning(true);
-      });
-
-      map.on("draw:deletestop", function () {
-        setDeleteWarning(false);
       });
 
       mapLRef.current = map;
@@ -474,16 +465,6 @@ const EditFloorPlanPage = () => {
               type="error"
               showIcon
               className="rounded-none"
-            />
-          )}
-          {deleteWarning && (
-            <Alert
-              type="warning"
-              showIcon
-              message="Warning"
-              description="Deleting a room will also remove all access points within that room. This action cannot be undone."
-              closable
-              onClose={() => setDeleteWarning(false)}
             />
           )}
           <div

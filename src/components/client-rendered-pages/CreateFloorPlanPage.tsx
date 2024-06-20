@@ -46,7 +46,6 @@ const CreateFloorPlanPage = () => {
   const [baseImageUrl, setBaseImageUrl] = useState<string | null>("");
   const [categoryValue] = useState("room");
   const [labelMarkersDict] = useState<LabelMarkers>({});
-  const [deleteWarning, setDeleteWarning] = useState<boolean>(false);
   // Service
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [tutorialModalOpen, setTutorialModalOpen] = useState(false);
@@ -125,14 +124,6 @@ const CreateFloorPlanPage = () => {
         editableLayers.current!.addLayer(layer!);
 
         setCreateSpaceModalOpen(true);
-      });
-
-      map.on("draw:deletestart", function () {
-        setDeleteWarning(true);
-      });
-
-      map.on("draw:deletestop", function () {
-        setDeleteWarning(false);
       });
 
       mapLRef.current = map;
@@ -353,15 +344,19 @@ const CreateFloorPlanPage = () => {
     <>
       <div className="w-full flex flex-col lg:flex-row">
         <div className="w-full lg:w-3/4">
-          {deleteWarning && (
-            <Alert
-              type="warning"
-              showIcon
-              message="Caution: Deleting a room cannot be undone."
-              closable
-              onClose={() => setDeleteWarning(false)}
-            />
-          )}
+          <Alert
+            type="info"
+            showIcon
+            closable
+            message={
+              <div className="flex gap-2 items-center">
+                <span>
+                  Tip: Upload an image of the floor plan first to start drawing
+                </span>
+              </div>
+            }
+            className="rounded-none"
+          />
           <div
             id="map"
             style={{
