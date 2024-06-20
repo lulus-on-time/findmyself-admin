@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import { PAGE_ROUTES } from "@/config/constants";
 import { Alert, Button, Table, TableColumnsType } from "antd";
@@ -9,9 +8,12 @@ import { getAccessPointDetail } from "@/services/accessPoint";
 import CustomLayout from "@/components/layout/CustomLayout";
 import { ApDetailDataType } from "../type";
 
-const AccessPointDetailPage = () => {
-  const searchParams = useSearchParams();
-  const floorId = searchParams.get("floorId");
+const AccessPointDetailPage = ({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) => {
+  const floorId = searchParams["floorId"];
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [floorName, setFloorName] = useState<string>("");
