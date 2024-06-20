@@ -24,8 +24,8 @@ npm i
 ```
 2. Create `.env` file in the root directory of the project
 
-```
-# Change value with the base URL of the API
+```env
+# change value with the base URL of the API
 NEXT_PUBLIC_BASE_URL=http://35.219.115.59
 ```
 
@@ -39,7 +39,23 @@ npm run dev
 
 ### Production
 
-Lorem Ipsum
+1. Build the docker image
+
+```bash
+docker build -t <tag> --build-arg NEXT_PUBLIC_BASE_URL=<API_BASE_URL> .
+
+# example
+docker build -t website --build-arg NEXT_PUBLIC_BASE_URL=http://35.219.115.59 .
+```
+
+2. Run the docker image
+
+```bash
+docker run -p <Host Port>:<Container Port> <tag>
+
+# example
+docker run -p 8080:80 website
+```
 
 ## Learn More
 
